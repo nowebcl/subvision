@@ -26,15 +26,16 @@ export interface ROVReport {
 }
 
 const initialRovReports: ROVReport[] = [
-  { id: 'r-pilpilehue-1', fecha: '2026-07-14', nombre: 'INSPECCIÓN DE REDES JAULA 105', jefeCentro: 'Andrés Mansilla', piloto: 'Christian Oyarzún', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED PECERA (Falla de integridad con desgarro vertical en cuadrante oeste)', centroId: 'centro-pilpilehue' },
-  { id: 'r-pilpilehue-2', fecha: '2026-07-13', nombre: 'AUDITORÍA DE VECTORES DE ANCLAJE JAULA 108', jefeCentro: 'Andrés Mansilla', piloto: 'Felipe Soto', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'LÍNEA DE FONDEO B2 (Tensión de 148.9 kN registrada)', centroId: 'centro-pilpilehue' },
+  { id: 'r-pilpilehue-1', fecha: '2026-07-18', nombre: 'INSPECCIÓN DE REDES JAULA 103', jefeCentro: 'Andrés Mansilla', piloto: 'Operador Subvision', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED PECERA (Desgarro de 1.2m en cuadrante inferior sur, reparado temporalmente)', centroId: 'centro-pilpilehue', userEmail: 'operador@servirov.cl' },
+  { id: 'r-pilpilehue-2', fecha: '2026-07-17', nombre: 'AUDITORÍA DE VECTORES DE ANCLAJE B2', jefeCentro: 'Andrés Mansilla', piloto: 'Operador Subvision', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'LÍNEA DE ANCLAJE B2 (Tensión máxima de 148.9 kN registrada durante oscilación de corriente)', centroId: 'centro-pilpilehue', userEmail: 'operador@servirov.cl' },
+  { id: 'r-pilpilehue-3', fecha: '2026-07-16', nombre: 'MONITOREO DE BIOFOULING JAULA 105', jefeCentro: 'Andrés Mansilla', piloto: 'Operador Subvision', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA (Nivel de adherencia de algas moderado, requiere limpieza programada en 5 días)', centroId: 'centro-pilpilehue', userEmail: 'operador@servirov.cl' },
   { id: 'r-quellon-1', fecha: '2026-07-14', nombre: 'REVISIÓN DE BIOFOULING JAULA 110', jefeCentro: 'Carlos Peña', piloto: 'Cristian Barcena Córdova', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA (Acumulación moderada de algas en cuadrante norte)', centroId: 'centro-quellon' },
   { id: 'r-quellon-2', fecha: '2026-07-12', nombre: 'MONITOREO DE BIOMASA JAULA 101', jefeCentro: 'Carlos Peña', piloto: 'Carlos Varas', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA; RED LOBERA (Sin observaciones, comportamiento normal)', centroId: 'centro-quellon' },
   { id: 'r-apiao-1', fecha: '2026-07-14', nombre: 'INSPECCIÓN DE PARCHES JAULA 107', jefeCentro: 'Juan Silva', piloto: 'Hugo Díaz', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED PECERA (Desgarro menor de 0.5m en cuadrante este)', centroId: 'centro-apiao' },
   { id: 'r-apiao-2', fecha: '2026-07-11', nombre: 'LIMPIEZA DE MALLA JAULA 112', jefeCentro: 'Juan Silva', piloto: 'Daniel Toro', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED LOBERA (Retiro de suciedad y adherencias completo)', centroId: 'centro-apiao' }
 ];
 
-interface AppContextType {
+export interface AppContextType {
   currentUser: typeof mockUser | null;
   currentView: string;
   selectedCenter: AquacultureCenter;
@@ -98,10 +99,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [currentView, setCurrentView] = useState<string>('dashboard');
   const [activeTab, setActiveTab] = useState<'telemetry' | 'rov' | 'structures' | 'admin'>('rov');
-  
+
   const [centers, setCenters] = useState<AquacultureCenter[]>(() => {
     const saved = localStorage.getItem('subvision_centers');
-    return saved ? JSON.parse(saved) : aquacultureCenters;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Clean any cached 'centro-huito' and replace with 'centro-pilpilehue'
+        const cleaned = parsed.map((c: any) => {
+          if (c.id === 'centro-huito') {
+            const pilpilehueDefault = aquacultureCenters.find(ac => ac.id === 'centro-pilpilehue');
+            return pilpilehueDefault || c;
+          }
+          return c;
+        }).filter((c: any) => c.id !== 'centro-huito');
+        
+        // Ensure centro-pilpilehue is present
+        if (!cleaned.some((c: any) => c.id === 'centro-pilpilehue')) {
+          const pilpilehueDefault = aquacultureCenters.find(ac => ac.id === 'centro-pilpilehue');
+          if (pilpilehueDefault) cleaned.unshift(pilpilehueDefault);
+        }
+        return cleaned;
+      } catch {
+        return aquacultureCenters;
+      }
+    }
+    return aquacultureCenters;
   });
 
   // Filter centers list based on logged in user role and assignments
@@ -124,11 +147,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedId = localStorage.getItem('subvision_selected_center_id');
     const savedCenters = localStorage.getItem('subvision_centers');
     const currentCenters = savedCenters ? JSON.parse(savedCenters) : aquacultureCenters;
-    if (savedId) {
-      const found = currentCenters.find((c: any) => c.id === savedId);
+    
+    let cleanedCenters = currentCenters;
+    try {
+      cleanedCenters = currentCenters.map((c: any) => {
+        if (c.id === 'centro-huito') {
+          const pilpilehueDefault = aquacultureCenters.find(ac => ac.id === 'centro-pilpilehue');
+          return pilpilehueDefault || c;
+        }
+        return c;
+      }).filter((c: any) => c.id !== 'centro-huito');
+      
+      if (!cleanedCenters.some((c: any) => c.id === 'centro-pilpilehue')) {
+        const pilpilehueDefault = aquacultureCenters.find(ac => ac.id === 'centro-pilpilehue');
+        if (pilpilehueDefault) cleanedCenters.unshift(pilpilehueDefault);
+      }
+    } catch {}
+
+    const activeId = savedId === 'centro-huito' ? 'centro-pilpilehue' : savedId;
+    if (activeId) {
+      const found = cleanedCenters.find((c: any) => c.id === activeId);
       if (found) return found;
     }
-    return currentCenters[0];
+    return cleanedCenters[0];
   });
 
   // Sync selected center when allowed list changes
@@ -140,6 +181,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
   }, [filteredCenters, selectedCenter?.id]);
+
+  // Keep selectedCenter in sync with centers array when center data changes (e.g. simulation or load)
+  useEffect(() => {
+    const updated = centers.find(c => c.id === selectedCenter?.id);
+    if (updated && JSON.stringify(updated) !== JSON.stringify(selectedCenter)) {
+      setSelectedCenter(updated);
+    }
+  }, [centers, selectedCenter?.id]);
 
   const [activeAlerts, setActiveAlerts] = useState<SystemAlert[]>(() => {
     const saved = localStorage.getItem('subvision_active_alerts');
@@ -213,8 +262,201 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (error) {
         console.warn("Could not save activity to Supabase:", error.message);
       }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const saveCenterToSupabase = async (center: AquacultureCenter) => {
+    try {
+      const { error } = await supabase
+        .from('aquaculture_centers')
+        .upsert({
+          id: center.id,
+          name: center.name,
+          location: center.location,
+          region: center.region,
+          coordinates: center.coordinates,
+          water_params: center.waterParams,
+          cages: center.cages,
+          mooring_lines: center.mooringLines,
+          historical_oxygen: center.historicalOxygen,
+          historical_current: center.historicalCurrent
+        });
+      if (error) {
+        console.warn(`Could not save center ${center.id} to Supabase:`, error.message);
+      }
     } catch (e) {
-      console.warn("Supabase activity log error:", e);
+      console.warn(`Error during upsert of center ${center.id} to Supabase:`, e);
+    }
+  };
+
+  const loadCenters = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('aquaculture_centers')
+        .select('*');
+
+      if (!error && data && data.length > 0) {
+        const mappedCenters: AquacultureCenter[] = data.map(c => ({
+          id: c.id,
+          name: c.name,
+          location: c.location || '',
+          region: c.region || '',
+          coordinates: c.coordinates || '',
+          waterParams: c.water_params || {
+            temperature: 11.4,
+            dissolvedOxygen: 7.8,
+            ph: 8.1,
+            salinity: 31.2,
+            currentSpeed: 1.2
+          },
+          cages: c.cages || [],
+          mooringLines: c.mooring_lines || [],
+          historicalOxygen: c.historical_oxygen || [],
+          historicalCurrent: c.historical_current || []
+        }));
+        
+        // Ensure default centers are present
+        const merged = [...mappedCenters];
+        for (const defaultCenter of aquacultureCenters) {
+          const exists = merged.some(c => c.id === defaultCenter.id);
+          if (!exists) {
+            merged.push(defaultCenter);
+            await saveCenterToSupabase(defaultCenter);
+          }
+        }
+        
+        setCenters(merged);
+        localStorage.setItem('subvision_centers', JSON.stringify(merged));
+        return;
+      } else if (data && data.length === 0) {
+        // Database empty, upload defaults
+        for (const defaultCenter of aquacultureCenters) {
+          await saveCenterToSupabase(defaultCenter);
+        }
+        setCenters(aquacultureCenters);
+        localStorage.setItem('subvision_centers', JSON.stringify(aquacultureCenters));
+        return;
+      }
+    } catch (e) {
+      console.warn("Could not load centers from Supabase, using local storage/fallback:", e);
+    }
+
+    // Fallback to local storage
+    const saved = localStorage.getItem('subvision_centers');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const cleaned = parsed.map((c: any) => {
+          if (c.id === 'centro-huito') {
+            const pilpilehueDefault = aquacultureCenters.find(ac => ac.id === 'centro-pilpilehue');
+            return pilpilehueDefault || c;
+          }
+          return c;
+        }).filter((c: any) => c.id !== 'centro-huito');
+        
+        if (!cleaned.some((c: any) => c.id === 'centro-pilpilehue')) {
+          const pilpilehueDefault = aquacultureCenters.find(ac => ac.id === 'centro-pilpilehue');
+          if (pilpilehueDefault) cleaned.unshift(pilpilehueDefault);
+        }
+        
+        setCenters(cleaned);
+        localStorage.setItem('subvision_centers', JSON.stringify(cleaned));
+      } catch {
+        setCenters(aquacultureCenters);
+        localStorage.setItem('subvision_centers', JSON.stringify(aquacultureCenters));
+      }
+    } else {
+      setCenters(aquacultureCenters);
+      localStorage.setItem('subvision_centers', JSON.stringify(aquacultureCenters));
+    }
+  };
+
+  const saveReportToSupabase = async (report: ROVReport) => {
+    try {
+      const { error } = await supabase
+        .from('rov_reports')
+        .upsert({
+          id: report.id,
+          fecha: report.fecha,
+          nombre: report.nombre,
+          jefe_centro: report.jefeCentro,
+          piloto: report.piloto,
+          empresa: report.empresa,
+          puerto: report.puerto,
+          redes: report.redes,
+          centro_id: report.centroId,
+          user_email: report.userEmail || 'operador@servirov.cl'
+        });
+      if (error) {
+        console.warn("Could not save report to Supabase table:", error.message);
+      }
+    } catch (err) {
+      console.warn("Failed to insert report to Supabase:", err);
+    }
+  };
+
+  const loadUserReports = async (email: string) => {
+    try {
+      const { data: dbReports, error } = await supabase
+        .from('rov_reports')
+        .select('*')
+        .eq('user_email', email)
+        .order('fecha', { ascending: false });
+
+      if (!error && dbReports) {
+        const mappedReports: ROVReport[] = dbReports.map(r => ({
+          id: r.id || `r-${Date.now()}-${Math.random()}`,
+          fecha: r.fecha || '',
+          nombre: r.nombre || '',
+          jefeCentro: r.jefe_centro || '',
+          piloto: r.piloto || '',
+          empresa: r.empresa || '',
+          puerto: r.puerto || 'Abierto',
+          redes: r.redes || '',
+          centroId: r.centro_id || '',
+          userEmail: r.user_email || ''
+        }));
+
+        let merged = [...mappedReports];
+        const userDefaults = initialRovReports.filter(r => r.userEmail === email || email === 'admin@servirov.cl');
+
+        for (const defaultReport of userDefaults) {
+          const exists = merged.some(r => r.id === defaultReport.id);
+          if (!exists) {
+            merged.push(defaultReport);
+            await saveReportToSupabase(defaultReport);
+          }
+        }
+
+        setRovReports(merged);
+        localStorage.setItem(`subvision_rov_reports_${email}`, JSON.stringify(merged));
+        return;
+      }
+    } catch (dbErr) {
+      console.warn("Failed to fetch reports from Supabase database, falling back to local storage:", dbErr);
+    }
+
+    const saved = localStorage.getItem(`subvision_rov_reports_${email}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const userDefaults = initialRovReports.filter(r => r.userEmail === email || email === 'admin@servirov.cl');
+        const merged = [...parsed];
+        userDefaults.forEach(def => {
+          if (!merged.some(r => r.id === def.id)) {
+            merged.push(def);
+          }
+        });
+        setRovReports(merged);
+        localStorage.setItem(`subvision_rov_reports_${email}`, JSON.stringify(merged));
+      } catch {
+        setRovReports(initialRovReports);
+      }
+    } else {
+      setRovReports(initialRovReports);
+      localStorage.setItem(`subvision_rov_reports_${email}`, JSON.stringify(initialRovReports));
     }
   };
 
@@ -231,54 +473,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
-  // Function to load reports from Supabase or localStorage
-  const loadUserReports = async (email: string) => {
-    try {
-      const { data: dbReports, error } = await supabase
-        .from('rov_reports')
-        .select('*')
-        .eq('user_email', email)
-        .order('fecha', { ascending: false });
-
-      if (!error && dbReports && dbReports.length > 0) {
-        const mappedReports: ROVReport[] = dbReports.map(r => ({
-          id: r.id || `r-${Date.now()}-${Math.random()}`,
-          fecha: r.fecha || '',
-          nombre: r.nombre || '',
-          jefeCentro: r.jefe_centro || '',
-          piloto: r.piloto || '',
-          empresa: r.empresa || '',
-          puerto: r.puerto || 'Abierto',
-          redes: r.redes || '',
-          centroId: r.centro_id || '',
-          userEmail: r.user_email || ''
-        }));
-        
-        // Merge with initial reports to ensure there are always at least the default ones
-        const merged = [...mappedReports];
-        initialRovReports.forEach(initR => {
-          if (!merged.some(r => r.centroId === initR.centroId && r.nombre === initR.nombre)) {
-            merged.push(initR);
-          }
-        });
-        
-        setRovReports(merged);
-        localStorage.setItem(`subvision_rov_reports_${email}`, JSON.stringify(merged));
-        return;
-      }
-    } catch (dbErr) {
-      console.warn("Failed to fetch reports from Supabase database, falling back to local storage:", dbErr);
-    }
-
-    const saved = localStorage.getItem(`subvision_rov_reports_${email}`);
-    if (saved) {
-      setRovReports(JSON.parse(saved));
-    } else {
-      setRovReports(initialRovReports);
-      localStorage.setItem(`subvision_rov_reports_${email}`, JSON.stringify(initialRovReports));
-    }
-  };
-
   const loadActivities = async () => {
     try {
       const { data, error } = await supabase
@@ -293,15 +487,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           timestamp: act.created_at ? new Date(act.created_at).toLocaleString() : new Date().toLocaleString()
         }));
         setActivities(mapped);
-        localStorage.setItem('subvision_operator_activities', JSON.stringify(mapped));
       }
     } catch (e) {
       console.warn("Could not load activities from Supabase:", e);
     }
   };
 
-  // Sync reports and activities with Supabase on mount if user is logged in
   useEffect(() => {
+    loadCenters();
     const savedUser = localStorage.getItem('subvision_current_user');
     if (savedUser) {
       try {
@@ -321,7 +514,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Filtrar piloto2 en caso de que haya quedado en caché
         const filtered = parsed.filter((u: any) => u.email !== 'piloto2@servirov.cl');
         const merged = [...filtered];
         initialUsersList.forEach(initU => {
@@ -337,13 +529,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return initialUsersList;
   });
 
-  // Persist states to local storage database
   useEffect(() => {
     localStorage.setItem('subvision_centers', JSON.stringify(centers));
   }, [centers]);
 
   useEffect(() => {
-    localStorage.setItem('subvision_selected_center_id', selectedCenter.id);
+    if (selectedCenter?.id) {
+      localStorage.setItem('subvision_selected_center_id', selectedCenter.id);
+    }
   }, [selectedCenter]);
 
   useEffect(() => {
