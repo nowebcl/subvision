@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visor 3D de Instalaciones - SubVision</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN for styling the HUD overlay -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Three.js and OrbitControls via CDN -->
+  <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      margin: 0;
+      overflow: hidden;
+      background-color: #050b18;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    .hud-card {
+      background: rgba(8, 17, 36, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D Canvas -->
+  <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+  <!-- HUD overlay header -->
+  <div class="absolute top-4 inset-x-4 z-20 flex flex-wrap items-center justify-between gap-4 pointer-events-none">
+    
+    <!-- Left Branding -->
+    <div class="flex items-center gap-3 pointer-events-auto">
+      <a href="/" class="px-3.5 py-2.5 bg-slate-950/70 hover:bg-slate-900 text-cyan-400 hover:text-cyan-300 rounded-xl border border-cyan-500/30 transition-all flex items-center gap-1.5 font-bold text-[10px] uppercase select-none mr-1 shadow-lg" title="Volver al Dashboard">
+        ← Volver
+      </a>
+      <div class="w-10 h-10 rounded-xl bg-slate-950 flex items-center justify-center p-1.5 border border-cyan-500/30">
+        <img src="/LOGO.png" alt="Logo" class="w-full h-full object-contain">
+      </div>
+      <div>
+        <h2 class="text-white font-extrabold text-sm tracking-wide leading-none">SUBVISION VISOR 3D</h2>
+        <span class="text-[9px] font-mono text-cyan-400 font-bold uppercase tracking-widest">SERVIROV LIVE DB ENGINE</span>
+      </div>
+    </div>
+
+    <!-- Center Cards Mockup -->
+    <div class="flex gap-3 pointer-events-auto text-xs">
+      <div class="hud-card px-4 py-2 rounded-xl text-white">
+        <span class="text-[8px] text-slate-400 uppercase font-bold block leading-none">Centro de Cultivo</span>
+        <span id="center-name" class="font-bold">Centro Pilpilehue</span>
+      </div>
+      <div class="hud-card px-4 py-2 rounded-xl text-white">
+        <span class="text-[8px] text-slate-400 uppercase font-bold block leading-none">Módulo Estructura</span>
+        <span class="font-bold">Grid 2x7 (14 Jaulas)</span>
+      </div>
+      <div class="hud-card px-4 py-2 rounded-xl text-white">
+        <span class="text-[8px] text-slate-400 uppercase font-bold block leading-none">Sincronización</span>
+        <span class="font-bold text-emerald-400 animate-pulse">● Base de Datos Activa</span>
+      </div>
+    </div>
+
+    <!-- Right Close / Controls Instruction -->
+    <div class="hud-card px-4 py-2.5 rounded-xl text-slate-300 text-[10px] font-mono pointer-events-auto hidden md:block">
+      🖱️ Arrastrar para rotar • Scroll para zoom
+    </div>
+  </div>
+
+  <!-- Interactive 2D HUD Indicators Overlay -->
+  <div id="hud-indicators-container" class="absolute inset-0 pointer-events-none z-10">
+    <!-- Generated dynamically in JS! -->
+  </div>
+
+  <!-- Glassmorphic Details slide-out drawer (Right side) - Redesigned 1000x Improved -->
+  <div id="drawer" class="fixed inset-y-0 right-0 w-[420px] max-w-full bg-[#081124]/90 backdrop-blur-2xl border-l border-cyan-500/25 z-30 translate-x-full transition-transform duration-300 p-6 flex flex-col justify-between text-xs text-slate-200 shadow-[-10px_0_30px_rgba(5,11,24,0.5)]">
+    <div class="space-y-5 overflow-y-auto max-h-[90vh] pr-1">
+      <div class="flex items-center justify-between border-b border-cyan-500/20 pb-3">
+        <div>
+          <h3 id="drawer-title" class="text-sm font-black text-white uppercase tracking-wider">Historial de Reportes</h3>
+          <span class="text-[9px] font-mono text-cyan-400">Detalles de Auditoría en Vivo</span>
+        </div>
+        <button onclick="closeDrawer()" class="p-1.5 rounded-lg text-slate-400 hover:bg-white/5 hover:text-white font-bold font-mono text-sm">X</button>
+      </div>
+
+      <!-- 2-Column Technical Parameters Grid (User requested "1000x Improved") -->
+      <div class="space-y-2.5">
+        <span class="text-[8px] font-mono text-cyan-400 uppercase tracking-widest block font-bold">Ficha Técnica del Incidente</span>
+        
+        <div class="grid grid-cols-2 gap-2.5">
+          <!-- Jaula Principal -->
+          <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-3">
+            <span class="text-[7.5px] text-slate-400 uppercase font-mono block">Jaula Principal</span>
+            <span id="field-jaula" class="font-extrabold text-sm text-white font-mono">-</span>
+          </div>
+
+          <!-- Profundidad -->
+          <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-3">
+            <span class="text-[7.5px] text-slate-400 uppercase font-mono block">Profundidad</span>
+            <span id="field-profundidad" class="font-extrabold text-sm text-cyan-300 font-mono">-</span>
+          </div>
+
+          <!-- Jaula Ref 1 -->
+          <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-3">
+            <span class="text-[7.5px] text-slate-400 uppercase font-mono block">Jaula Referencial 1</span>
+            <span id="field-ref1" class="font-bold text-xs text-slate-300 font-mono">-</span>
+          </div>
+
+          <!-- Jaula Ref 2 -->
+          <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-3">
+            <span class="text-[7.5px] text-slate-400 uppercase font-mono block">Jaula Referencial 2</span>
+            <span id="field-ref2" class="font-bold text-xs text-slate-300 font-mono">-</span>
+          </div>
+
+          <!-- Sección Pecera -->
+          <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-3">
+            <span class="text-[7.5px] text-slate-400 uppercase font-mono block">Sección Pecera</span>
+            <span id="field-seccion" class="font-bold text-xs text-slate-300">-</span>
+          </div>
+
+          <!-- Clasificación -->
+          <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-3">
+            <span class="text-[7.5px] text-slate-400 uppercase font-mono block">Clasificación Hallazgo</span>
+            <span id="field-clasificacion" class="font-bold text-xs text-slate-300 truncate block">-</span>
+          </div>
+        </div>
+
+        <!-- Estado del Hallazgo (Full Width Badge) -->
+        <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-3 flex justify-between items-center">
+          <div>
+            <span class="text-[7.5px] text-slate-400 uppercase font-mono block">Estado del Hallazgo</span>
+            <span id="field-estado-text" class="font-extrabold text-xs text-white uppercase">-</span>
+          </div>
+          <span id="field-estado-badge" class="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border leading-none">-</span>
+        </div>
+      </div>
+
+      <!-- Revision Logs/Details Text Content -->
+      <div id="drawer-content" class="space-y-4">
+        <!-- Loaded dynamically in JS -->
+      </div>
+
+      <!-- Media Files / Attachments Gallery -->
+      <div class="space-y-2.5">
+        <span class="text-[8px] font-mono text-cyan-400 uppercase tracking-widest block font-bold">Archivos y Multimedia Registrados</span>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Photo Thumbnail -->
+          <div class="relative group rounded-xl overflow-hidden border border-cyan-500/20 bg-slate-950 aspect-video shadow-md">
+            <img src="/net_inspection.png" alt="Captura Subacuática" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer" onclick="openFullscreenMedia('/net_inspection.png', 'image')" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+            <span class="absolute bottom-2 left-2 bg-slate-950/85 text-[7px] text-white px-1.5 py-0.5 rounded font-mono border border-white/5">CAPTURA_ROV.PNG</span>
+          </div>
+
+          <!-- Video Thumbnail -->
+          <div class="relative group rounded-xl overflow-hidden border border-cyan-500/20 bg-slate-950 aspect-video shadow-md flex items-center justify-center cursor-pointer" onclick="openFullscreenMedia('https://vjs.zencdn.net/v/oceans.mp4', 'video')">
+            <video src="https://vjs.zencdn.net/v/oceans.mp4" muted loop class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <div class="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors duration-300" />
+            <!-- Play icon overlay -->
+            <div class="relative z-10 w-9 h-9 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110">
+              <svg className="w-4 h-4 fill-current ml-0.5" viewBox="0 0 24 24" width="16" height="16">
+                <path d="M8 5v14l11-7z" fill="currentColor"/>
+              </svg>
+            </div>
+            <span class="absolute bottom-2 left-2 bg-slate-950/85 text-[7px] text-white px-1.5 py-0.5 rounded font-mono border border-white/5 z-10">VIDEO_INSP.MP4</span>
+          </div>
+        </div>
+      </div>
+      <!-- Info and Media only -->
+
+    </div>
+
+    <div class="border-t border-cyan-500/10 pt-4 text-[10px] text-slate-500 font-mono text-center">
+      SUBVISION 3D VISUALIZER ENGINE
+    </div>
+  </div>
+
+  <!-- Fullscreen Media Modal Viewer -->
+  <div id="media-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <button onclick="closeFullscreenMedia()" class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white font-mono p-3 rounded-full text-base font-bold transition-all border border-white/10 shadow-lg">✕ Cerrar</button>
+    <div id="modal-content" class="w-full max-w-4xl max-h-[85vh] flex items-center justify-center">
+      <!-- Loaded dynamically in JS -->
+    </div>
+  </div>
+
+  <!-- Three.js Application Logic -->
+  <script>
+    // Global parameters
+    let scene, camera, renderer, controls;
+    let cageGroup;
+    let markers = []; // Array of { id: string, pos: Vector3, el: HTMLElement }
+    let allReports = [];
+    let activeReportId = null;
+
+    // Supabase config
+    const supabaseUrl = 'https://oyovjfqrvlqklmerogmz.supabase.co';
+    const supabaseAnonKey = 'sb_publishable_4EHtNqGzWqaAMECQ9LPapQ_B4b7_e90';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    // Grid coordinate mapping dictionary (2x7 Layout)
+    const cageCoords = {
+      '101': new THREE.Vector3(84, 8, -14),
+      '102': new THREE.Vector3(84, 8, 14),
+      '103': new THREE.Vector3(56, 8, -14),
+      '104': new THREE.Vector3(56, 8, 14),
+      '105': new THREE.Vector3(28, 8, -14),
+      '106': new THREE.Vector3(28, 8, 14),
+      '107': new THREE.Vector3(0, 8, -14),
+      '108': new THREE.Vector3(0, 8, 14),
+      '109': new THREE.Vector3(-28, 8, -14),
+      '110': new THREE.Vector3(-28, 8, 14),
+      '111': new THREE.Vector3(-56, 8, -14),
+      '112': new THREE.Vector3(-56, 8, 14),
+      '113': new THREE.Vector3(-84, 8, -14),
+      '114': new THREE.Vector3(-84, 8, 14)
+    };
+
+    // Default static mock data for fallback
+    const initialRovReportsFallback = [
+      { id: 'r-pilpilehue-1', fecha: '2026-07-14', nombre: 'INSPECCIÓN DE REDES JAULA 105', jefeCentro: 'Andrés Mansilla', piloto: 'Christian Oyarzún', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED PECERA (Falla de integridad con desgarro vertical en cuadrante oeste)', centroId: 'centro-pilpilehue' },
+      { id: 'r-pilpilehue-2', fecha: '2026-07-13', nombre: 'AUDITORÍA DE VECTORES DE ANCLAJE JAULA 108', jefeCentro: 'Andrés Mansilla', piloto: 'Felipe Soto', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'LÍNEA DE FONDEO B2 (Tensión de 148.9 kN registrada)', centroId: 'centro-pilpilehue' },
+      { id: 'r-quellon-1', fecha: '2026-07-14', nombre: 'REVISIÓN DE BIOFOULING JAULA 110', jefeCentro: 'Carlos Peña', piloto: 'Cristian Barcena Córdova', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA (Acumulación moderada de algas en cuadrante norte)', centroId: 'centro-quellon' },
+      { id: 'r-quellon-2', fecha: '2026-07-12', nombre: 'MONITOREO DE BIOMASA JAULA 101', jefeCentro: 'Carlos Peña', piloto: 'Carlos Varas', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA; RED LOBERA (Sin observaciones, comportamiento normal)', centroId: 'centro-quellon' },
+      { id: 'r-apiao-1', fecha: '2026-07-14', nombre: 'INSPECCIÓN DE PARCHES JAULA 107', jefeCentro: 'Juan Silva', piloto: 'Hugo Díaz', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED PECERA (Desgarro menor de 0.5m en cuadrante este)', centroId: 'centro-apiao' },
+      { id: 'r-apiao-2', fecha: '2026-07-11', nombre: 'LIMPIEZA DE MALLA JAULA 112', jefeCentro: 'Juan Silva', piloto: 'Daniel Toro', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED LOBERA (Retiro de suciedad y adherencias completo)', centroId: 'centro-apiao' }
+    ];
+
+    function detectCageId(report) {
+      const text = `${report.nombre} ${report.redes}`.toLowerCase();
+      if (text.includes('101')) return '101';
+      if (text.includes('102')) return '102';
+      if (text.includes('103')) return '103';
+      if (text.includes('104')) return '104';
+      if (text.includes('105')) return '105';
+      if (text.includes('106')) return '106';
+      if (text.includes('107')) return '107';
+      if (text.includes('108') || text.includes('b2')) return '108'; // B2 maps to 108
+      if (text.includes('109')) return '109';
+      if (text.includes('110')) return '110';
+      if (text.includes('111')) return '111';
+      if (text.includes('112')) return '112';
+      if (text.includes('113')) return '113';
+      if (text.includes('114')) return '114';
+    }
+
+    function getMarker3DPosition(report) {
+      const cageId = detectCageId(report);
+      if (!cageId) return null;
+      const basePos = cageCoords[cageId];
+      if (!basePos) return null;
+
+      const text = `${report.nombre} ${report.redes}`.toLowerCase();
+      
+      // Default: collar level (y = 8)
+      let x = basePos.x;
+      let y = 8; 
+      let z = basePos.z;
+
+      if (text.includes('fondo')) {
+        // Bottom of the net (y = -8)
+        y = -8;
+      } else if (text.includes('rotura') || text.includes('desgarro') || text.includes('falla') || text.includes('integridad')) {
+        // Middle wall of the net (y = -4) and slightly offset to show on the net wireframe
+        y = -4;
+        if (text.includes('oeste')) {
+          x -= 11; // shift to west face
+        } else if (text.includes('este')) {
+          x += 11; // shift to east face
+        } else {
+          z += 11; // shift to front face
+        }
+      } else if (text.includes('biofouling') || text.includes('algas') || text.includes('suciedad')) {
+        // Side wall of the net (y = 2)
+        y = 2;
+        z -= 11; // shift to back face
+      } else if (text.includes('línea de fondeo') || text.includes('anclaje') || text.includes('tensión') || text.includes('fondeo')) {
+        // On the mooring attachment collar
+        y = 8;
+        z += 11.5; // shift to the mooring hook point
+      }
+      
+      return new THREE.Vector3(x, y, z);
+    }
+
+    async function loadReportsAndCreateMarkers() {
+      const savedUser = localStorage.getItem('subvision_current_user');
+      let email = 'operador@servirov.cl';
+      if (savedUser) {
+        try {
+          email = JSON.parse(savedUser).email;
+        } catch {}
+      }
+
+      // 1. Try to fetch from Supabase table
+      let reports = [];
+      try {
+        const { data: dbReports, error } = await supabaseClient
+          .from('rov_reports')
+          .select('*')
+          .eq('user_email', email)
+          .order('fecha', { ascending: false });
+
+        if (!error && dbReports && dbReports.length > 0) {
+          reports = dbReports.map(r => ({
+            id: r.id,
+            fecha: r.fecha || '',
+            nombre: r.nombre || '',
+            jefeCentro: r.jefe_centro || '',
+            piloto: r.piloto || '',
+            empresa: r.empresa || '',
+            puerto: r.puerto || 'Abierto',
+            redes: r.redes || '',
+            centroId: r.centro_id || ''
+          }));
+        }
+      } catch (dbErr) {
+        console.warn("Supabase fetch failed in 3D Viewer, using local cache:", dbErr);
+      }
+
+      // 2. Fallback to user localStorage cache
+      if (reports.length === 0) {
+        const saved = localStorage.getItem(`subvision_rov_reports_${email}`);
+        if (saved) {
+          reports = JSON.parse(saved);
+        } else if (email === 'operador@servirov.cl') {
+          reports = initialRovReportsFallback;
+        }
+      }
+
+      // Get active center ID from URL query parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCenterId = urlParams.get('center') || 'centro-pilpilehue';
+
+      // Update center name label in HUD header dynamically
+      const centerNameMap = {
+        'centro-pilpilehue': 'Centro Pilpilehue',
+        'centro-apiao': 'Centro Apiao',
+        'centro-quellon': 'Centro Quellón'
+      };
+      if (centerNameMap[urlCenterId]) {
+        document.getElementById('center-name').innerText = centerNameMap[urlCenterId];
+      }
+
+      // Filter reports to only show those belonging to the active center
+      const centerReports = reports.filter(r => !r.centroId || r.centroId === urlCenterId);
+
+      // Order chronologically for marker numbering (oldest to newest)
+      const chronologicalReports = [...centerReports].reverse();
+      allReports = centerReports; // Keep descending order for allReports lookup
+
+      // Clear indicators from HUD
+      const container = document.getElementById('hud-indicators-container');
+      container.innerHTML = '';
+      markers = [];
+
+      // Generate HTML overlays based on real reports coordinates
+      chronologicalReports.forEach((report, index) => {
+        const cageId = detectCageId(report);
+        if (!cageId) return;
+
+        const markerPos = getMarker3DPosition(report);
+        if (!markerPos) return;
+
+        // Determine severity styles
+        let badgeColor = 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
+        let badgeTextColor = 'text-emerald-200';
+        let label = `OK-${cageId}`;
+
+        if (report.puerto === 'Cerrado') {
+          const text = `${report.nombre} ${report.redes}`.toLowerCase();
+          if (text.includes('rotura') || text.includes('falla') || text.includes('tensión') || text.includes('desgarro') || text.includes('crítica')) {
+            badgeColor = 'bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.8)]';
+            badgeTextColor = 'text-red-200';
+            label = `Crit-${cageId}`;
+          } else {
+            badgeColor = 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]';
+            badgeTextColor = 'text-amber-200';
+            label = `Warn-${cageId}`;
+          }
+        } else {
+          const text = `${report.nombre} ${report.redes}`.toLowerCase();
+          if (text.includes('biofouling') || text.includes('depredador') || text.includes('desgaste')) {
+            badgeColor = 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]';
+            badgeTextColor = 'text-amber-200';
+            label = `Warn-${cageId}`;
+          }
+        }
+
+        const markerEl = document.createElement('div');
+        markerEl.className = 'absolute pointer-events-auto cursor-pointer transition-all duration-300 flex flex-col items-center';
+        markerEl.style.display = 'none';
+
+        const markerNumber = index + 1; // 1 to N chronological index
+
+        markerEl.innerHTML = `
+          <div onclick="openDrawerForReport('${report.id}')" class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white font-extrabold text-sm select-none ${badgeColor}">
+            ${markerNumber}
+          </div>
+          <div class="hud-card px-1.5 py-0.5 rounded text-[7.5px] mt-1 font-mono uppercase tracking-wider ${badgeTextColor}">
+            ${label}
+          </div>
+        `;
+
+        container.appendChild(markerEl);
+
+        markers.push({
+          id: report.id,
+          pos: markerPos, // Located at the exact corresponding depth/part of the net
+          el: markerEl
+        });
+      });
+
+      // Parse parameters to auto-highlight report from URL
+      const params = new URLSearchParams(window.location.search);
+      const reportId = params.get('report');
+      if (reportId) {
+        setTimeout(() => openDrawerForReport(reportId), 500);
+      }
+    }
+
+    function init() {
+      // 1. Scene Setup
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x050b18);
+      scene.fog = new THREE.FogExp2(0x050b18, 0.006);
+
+      // 2. Camera Setup
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.set(0, 75, 160);
+
+      // 3. Renderer Setup
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+      // 4. Orbit Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 - 0.05;
+      controls.minDistance = 20;
+      controls.maxDistance = 400;
+
+      // 5. Lighting
+      const ambientLight = new THREE.AmbientLight(0x0a224a, 1.8);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0x00d2ff, 1.4);
+      dirLight.position.set(50, 120, 40);
+      scene.add(dirLight);
+
+      // 6. Seabed
+      createSeabed();
+
+      // 7. 2x7 cages grid
+      createCages();
+
+      // 8. Mooring Cables
+      createMooringLines();
+
+      // Load data and create overlays markers
+      loadReportsAndCreateMarkers();
+
+      window.addEventListener('resize', onWindowResize);
+
+      animate();
+    }
+
+    function createSeabed() {
+      const gridHelper = new THREE.GridHelper(400, 40, 0x0e2b5c, 0x0b1c3c);
+      gridHelper.position.y = -25;
+      scene.add(gridHelper);
+
+      const ringGeo = new THREE.RingGeometry(35, 36, 32);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff, side: THREE.DoubleSide, transparent: true, opacity: 0.18 });
+      const compassMesh = new THREE.Mesh(ringGeo, ringMat);
+      compassMesh.rotation.x = Math.PI / 2;
+      compassMesh.position.set(0, -24.9, 0);
+      scene.add(compassMesh);
+
+      const planeGeo = new THREE.PlaneGeometry(1200, 1200);
+      const planeMat = new THREE.MeshStandardMaterial({ color: 0x05122b, roughness: 0.85, metalness: 0.12 });
+      const seabedPlane = new THREE.Mesh(planeGeo, planeMat);
+      seabedPlane.rotation.x = -Math.PI / 2;
+      seabedPlane.position.y = -25.1;
+      scene.add(seabedPlane);
+    }
+
+    function createCages() {
+      cageGroup = new THREE.Group();
+
+      const statusMap = {
+        101: 0, 102: 0, 103: 1, 104: 0, 105: 2, 106: 0, 
+        107: 2, 108: 2, 109: 0, 110: 1, 111: 0, 112: 1, 
+        113: 0, 114: 0
+      };
+
+      const colorMap = [
+        0x10b981, // 0: Optimal Green
+        0xf59e0b, // 1: Warning Amber
+        0xef4444  // 2: Critical Red
+      ];
+
+      // Long framework beams
+      const longBeamGeo = new THREE.BoxGeometry(196, 1.2, 1.2);
+      const beamMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 });
+      
+      [-14, 0, 14].forEach(z => {
+        const beam = new THREE.Mesh(longBeamGeo, beamMat);
+        beam.position.set(0, 8, z);
+        cageGroup.add(beam);
+      });
+
+      // Cross beams
+      const crossBeamGeo = new THREE.BoxGeometry(1.2, 1.2, 30);
+      for (let c = 0; c < 8; c++) {
+        const x = (c - 3.5) * 28;
+        const beam = new THREE.Mesh(crossBeamGeo, beamMat);
+        beam.position.set(x, 8, 0);
+        cageGroup.add(beam);
+      }
+
+      // Generate grid
+      for (let r = 0; r < 2; r++) {
+        const z = (r - 0.5) * 28;
+        
+        for (let c = 0; c < 7; c++) {
+          const x = (c - 3) * 28;
+          
+          const cageId = (r === 0) ? (113 - c * 2) : (114 - c * 2);
+          const cageStatus = statusMap[cageId] !== undefined ? statusMap[cageId] : 0;
+          const cageColor = colorMap[cageStatus];
+
+          // Platform collar
+          const collarGeo = new THREE.BoxGeometry(24, 0.8, 24);
+          const collarMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5 });
+          const collar = new THREE.Mesh(collarGeo, collarMat);
+          collar.position.set(x, 8, z);
+          cageGroup.add(collar);
+
+          // Net wireframe
+          const netGeo = new THREE.BoxGeometry(22, 16, 22);
+          const wireframe = new THREE.EdgesGeometry(netGeo);
+          const lineMat = new THREE.LineBasicMaterial({ 
+            color: cageColor, 
+            linewidth: 1.5,
+            transparent: true,
+            opacity: 0.65
+          });
+          const netLine = new THREE.LineSegments(wireframe, lineMat);
+          netLine.position.set(x, 0, z);
+          cageGroup.add(netLine);
+
+          // Net walls
+          const netWallMat = new THREE.MeshBasicMaterial({
+            color: cageColor,
+            transparent: true,
+            opacity: 0.04,
+            side: THREE.DoubleSide
+          });
+          const netWall = new THREE.Mesh(netGeo, netWallMat);
+          netWall.position.set(x, 0, z);
+          cageGroup.add(netWall);
+
+          // Critical indicator line highlights
+          if (cageStatus === 2) {
+            const alertGeo = new THREE.BoxGeometry(24.5, 17, 24.5);
+            const alertWire = new THREE.EdgesGeometry(alertGeo);
+            const alertMat = new THREE.LineBasicMaterial({ 
+              color: 0xef4444, 
+              transparent: true, 
+              opacity: 0.7 
+            });
+            const alertBox = new THREE.LineSegments(alertWire, alertMat);
+            alertBox.position.set(x, 0, z);
+            alertBox.name = `crit-alert-${cageId}`;
+            cageGroup.add(alertBox);
+          }
+        }
+      }
+
+      scene.add(cageGroup);
+    }
+
+    function createMooringLines() {
+      const anchorPoints = [
+        { start: new THREE.Vector3(-98, 8, -14), end: new THREE.Vector3(-140, -25, -60) },
+        { start: new THREE.Vector3(-98, 8, 14), end: new THREE.Vector3(-140, -25, 60) },
+        { start: new THREE.Vector3(98, 8, -14), end: new THREE.Vector3(140, -25, -60) },
+        { start: new THREE.Vector3(98, 8, 14), end: new THREE.Vector3(140, -25, 60) },
+        { start: new THREE.Vector3(0, 8, -14), end: new THREE.Vector3(0, -25, -80) },
+        { start: new THREE.Vector3(0, 8, 14), end: new THREE.Vector3(0, -25, 80) },
+        { start: new THREE.Vector3(-98, 8, 0), end: new THREE.Vector3(-160, -25, 0) },
+        { start: new THREE.Vector3(98, 8, 0), end: new THREE.Vector3(160, -25, 0) }
+      ];
+
+      anchorPoints.forEach(pt => {
+        const points = [pt.start, pt.end];
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x06b6d4, linewidth: 1.5, transparent: true, opacity: 0.6 });
+        const line = new THREE.Line(lineGeo, lineMat);
+        scene.add(line);
+
+        const anchorGeo = new THREE.BoxGeometry(2.5, 2.5, 2.5);
+        const anchorMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
+        const anchor = new THREE.Mesh(anchorGeo, anchorMat);
+        anchor.position.copy(pt.end);
+        scene.add(anchor);
+      });
+    }
+
+    function updateMarkers() {
+      const tempV = new THREE.Vector3();
+
+      markers.forEach(marker => {
+        tempV.copy(marker.pos);
+        
+        // Sync with the platform wave motion so markers stay glued
+        if (cageGroup) {
+          tempV.y += cageGroup.position.y;
+        }
+
+        tempV.project(camera);
+
+        if (tempV.z > 1) {
+          marker.el.style.display = 'none';
+          return;
+        }
+
+        const x = (tempV.x *  .5 + .5) * window.innerWidth;
+        const y = (tempV.y * -.5 + .5) * window.innerHeight;
+
+        marker.el.style.left = `${x - 16}px`;
+        marker.el.style.top = `${y - 16}px`;
+        marker.el.style.display = 'block';
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      controls.update();
+
+      const time = Date.now() * 0.0005;
+
+      if (cageGroup) {
+        cageGroup.position.y = Math.sin(time) * 0.35;
+        cageGroup.rotation.x = Math.sin(time * 0.8) * 0.005;
+        cageGroup.rotation.z = Math.cos(time * 0.8) * 0.005;
+        
+        [105, 107, 108].forEach(id => {
+          const highlight = cageGroup.getObjectByName(`crit-alert-${id}`);
+          if (highlight) {
+            highlight.material.opacity = 0.3 + Math.sin(time * 8) * 0.4;
+          }
+        });
+      }
+
+      updateMarkers();
+
+      renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function openDrawerForReport(reportId) {
+      const report = allReports.find(r => r.id === reportId);
+      if (!report) return;
+
+      activeReportId = reportId;
+      
+      // Reset AI response box and input
+      const resBox = document.getElementById('ai-response-box');
+      if (resBox) {
+        resBox.classList.add('hidden');
+        resBox.innerHTML = '';
+      }
+      const inpVal = document.getElementById('ai-question-input');
+      if (inpVal) {
+        inpVal.value = '';
+      }
+      const cageId = detectCageId(report) || 'General';
+
+      // 1000x Improved details mapping
+      document.getElementById('drawer-title').innerText = `Reporte: Jaula ${cageId}`;
+      
+      // Update form grid parameters
+      document.getElementById('field-jaula').innerText = cageId;
+      
+      // Dynamic depth mapping
+      let depth = '20 metros';
+      if (report.nombre.includes('105') || report.redes.includes('105')) depth = '12 metros';
+      else if (report.redes.includes('108') || report.redes.includes('B2')) depth = '24 metros';
+      else if (report.redes.includes('110')) depth = '18 metros';
+      document.getElementById('field-profundidad').innerText = depth;
+
+      // Adjacent referential cages
+      let ref1 = '-';
+      let ref2 = '-';
+      const parsedCageNum = parseInt(cageId);
+      if (!isNaN(parsedCageNum)) {
+        ref1 = (parsedCageNum - 1).toString();
+        ref2 = (parsedCageNum + 1).toString();
+      }
+      document.getElementById('field-ref1').innerText = `Jaula ${ref1}`;
+      document.getElementById('field-ref2').innerText = ref2 !== '115' ? `Jaula ${ref2}` : '-';
+
+      // Net section
+      let seccion = 'Fondo';
+      if (report.nombre.toLowerCase().includes('flotador') || report.redes.toLowerCase().includes('flotador')) {
+        seccion = 'Flotador';
+      } else if (report.redes.toLowerCase().includes('lateral')) {
+        seccion = 'Lateral';
+      }
+      document.getElementById('field-seccion').innerText = seccion;
+
+      // Classification
+      let clasificacion = 'Sin Hallazgos';
+      if (report.redes.toLowerCase().includes('rotura') || report.redes.toLowerCase().includes('falla') || report.redes.toLowerCase().includes('desgarro')) {
+        clasificacion = 'Rotura de Red';
+      } else if (report.redes.toLowerCase().includes('tensión') || report.redes.toLowerCase().includes('fondeo')) {
+        clasificacion = 'Sobretensión Fondeo';
+      } else if (report.redes.toLowerCase().includes('algas') || report.redes.toLowerCase().includes('biofouling')) {
+        clasificacion = 'Biofouling pesado';
+      }
+      document.getElementById('field-clasificacion').innerText = clasificacion;
+
+      // Badges
+      let statusColorText = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
+      let statusBadgeStyle = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+      let statusText = 'Óptimo - Sin fallas';
+      let estadoText = 'Resuelto / Reparado';
+
+      if (report.puerto === 'Cerrado') {
+        const text = `${report.nombre} ${report.redes}`.toLowerCase();
+        if (text.includes('rotura') || text.includes('falla') || text.includes('tensión') || text.includes('desgarro') || text.includes('crítica')) {
+          statusColorText = 'text-red-400 bg-red-500/10 border-red-500/30';
+          statusBadgeStyle = 'bg-red-500/20 text-red-300 border-red-500/40';
+          statusText = 'Crítico - Emergencia';
+          estadoText = 'Pendiente / Crítico';
+        } else {
+          statusColorText = 'text-amber-400 bg-amber-500/10 border-amber-500/30';
+          statusBadgeStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+          statusText = 'Advertencia - En Revisión';
+          estadoText = 'En Proceso';
+        }
+      } else {
+        const text = `${report.nombre} ${report.redes}`.toLowerCase();
+        if (text.includes('biofouling') || text.includes('depredador') || text.includes('desgaste')) {
+          statusColorText = 'text-amber-400 bg-amber-500/10 border-amber-500/30';
+          statusBadgeStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+          statusText = 'Advertencia';
+          estadoText = 'En Proceso';
+        }
+      }
+
+      document.getElementById('field-estado-text').innerText = estadoText;
+      
+      const badgeEl = document.getElementById('field-estado-badge');
+      badgeEl.innerText = report.puerto === 'Abierto' ? 'Abierto' : 'Cerrado';
+      badgeEl.className = `px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border leading-none ${statusBadgeStyle}`;
+
+      const contentEl = document.getElementById('drawer-content');
+      contentEl.innerHTML = `
+        <div class="border border-cyan-500/20 p-4 rounded-xl space-y-2 bg-[#0c1a36]/70 backdrop-blur-md">
+          <div class="flex items-center justify-between">
+            <span class="font-black text-white text-[11px] uppercase">${report.piloto}</span>
+            <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${statusColorText}">
+              ${statusText}
+            </span>
+          </div>
+          <p class="text-slate-300 italic text-[11px] leading-relaxed">
+            "${report.nombre}: ${report.redes}"
+          </p>
+          <div class="text-[8px] text-slate-500 font-mono pt-1.5 border-t border-cyan-500/10 flex justify-between">
+            <span>Jefe de Centro: ${report.jefeCentro}</span>
+            <span>Fecha: ${report.fecha}</span>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('drawer').classList.remove('translate-x-full');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer').classList.add('translate-x-full');
+      activeReportId = null;
+    }
+
+    // Fullscreen media modal actions
+    function openFullscreenMedia(url, type) {
+      const modal = document.getElementById('media-modal');
+      const content = document.getElementById('modal-content');
+
+      if (type === 'image') {
+        content.innerHTML = `<img src="${url}" class="max-w-full max-h-[80vh] rounded-2xl border border-cyan-500/30 object-contain shadow-2xl" />`;
+      } else {
+        content.innerHTML = `
+          <video src="${url}" controls autoplay loop class="max-w-full max-h-[80vh] rounded-2xl border border-cyan-500/30 shadow-2xl">
+            Tu navegador no soporta reproducción de video.
+          </video>
+        `;
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeFullscreenMedia() {
+      const modal = document.getElementById('media-modal');
+      const content = document.getElementById('modal-content');
+      content.innerHTML = '';
+      modal.classList.add('hidden');
+    }
+
+    // Query the AI assistant about the active report using Groq Llama
+    async function queryDrawerAI() {
+      if (!activeReportId) return;
+      const report = allReports.find(r => r.id === activeReportId);
+      if (!report) return;
+
+      const inputEl = document.getElementById('ai-question-input');
+      const question = inputEl.value.trim();
+      if (!question) return;
+
+      const responseBox = document.getElementById('ai-response-box');
+      responseBox.classList.remove('hidden');
+      responseBox.innerHTML = `
+        <div class="flex items-center gap-2 text-cyan-400 font-mono text-[9px] uppercase tracking-wider">
+          <svg class="animate-spin h-3.5 w-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+            <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"></path>
+          </svg>
+          <span>Procesando consulta con IA...</span>
+        </div>
+      `;
+
+      inputEl.value = ''; // Clear input
+
+      const cageId = detectCageId(report) || 'General';
+      const systemPrompt = `Eres el Asistente de Inteligencia Artificial de SUBVISION, plataforma desarrollada por SERVIROV. Tu especialidad es asesorar a pilotos de ROV, buzos y supervisores en la reparación, mantenimiento e interpretación de incidentes técnicos en jaulas acuícolas.
+      
+A continuación se detallan los datos del reporte seleccionado en 3D:
+- Jaula: ${cageId}
+- Piloto/Inspector: ${report.piloto}
+- Fecha: ${report.fecha}
+- Jefe de Centro: ${report.jefeCentro}
+- Detalle del incidente: ${report.nombre} - ${report.redes}
+
+Responde la pregunta del operador de manera técnica, ultra-directa y concisa (máximo 3 párrafos cortos). Usa viñetas si es necesario y mantén un tono profesional industrial.`;
+
+      // ✅ Proxy seguro — la API key permanece en el servidor, nunca llega al navegador
+      try {
+        const response = await fetch('/api/chat', {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: question }
+            ],
+            temperature: 0.2
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error del proxy IA: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const reply = data.content;
+        
+        // Render formatted response
+        responseBox.innerHTML = `
+          <div class="flex items-center justify-between border-b border-cyan-500/10 pb-1.5 mb-1.5">
+            <span class="text-[8px] font-mono text-cyan-400 font-bold uppercase tracking-widest flex items-center gap-1">
+              ✨ Asistente IA SubVision
+            </span>
+          </div>
+          <p class="whitespace-pre-line text-slate-200">${reply}</p>
+        `;
+      } catch (err) {
+        responseBox.innerHTML = `
+          <div class="text-red-400 font-mono text-[9.5px]">
+            ⚠️ Error al conectar con la IA: ${err.message || err}
+          </div>
+        `;
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
