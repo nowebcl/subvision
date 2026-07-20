@@ -807,6 +807,51 @@
       });
     }
 
+    function updateMarkers() {
+      const tempV = new THREE.Vector3();
+
+      markers.forEach(marker => {
+        tempV.copy(marker.pos);
+        
+        // Sync with the platform wave motion so markers stay glued
+        if (cageGroup) {
+          tempV.y += cageGroup.position.y;
+        }
+
+        tempV.project(camera);
+
+        if (tempV.z > 1) {
+          marker.el.style.display = 'none';
+          return;
+        }
+
+        const x = (tempV.x *  .5 + .5) * window.innerWidth;
+        const y = (tempV.y * -.5 + .5) * window.innerHeight;
+
+        marker.el.style.left = `${x - 19}px`;
+        marker.el.style.top = `${y - 19}px`;
+        marker.el.style.display = 'block';
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      controls.update();
+
+      const time = Date.now() * 0.0005;
+
+      if (cageGroup) {
+        cageGroup.position.y = Math.sin(time) * 0.35;
+        cageGroup.rotation.x = Math.sin(time * 0.8) * 0.005;
+        cageGroup.rotation.z = Math.cos(time * 0.8) * 0.005;
+      }
+
+      updateMarkers();
+
+      renderer.render(scene, camera);
+    }
+
     function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
