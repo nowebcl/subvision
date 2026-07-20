@@ -32,6 +32,49 @@
       backdrop-filter: blur(16px);
       border: 1px solid rgba(6, 182, 212, 0.25);
     }
+    .tech-marker {
+      width: 38px;
+      height: 38px;
+      border: 2px solid rgba(52, 211, 153, 0.95);
+      border-radius: 50%;
+      background: rgba(6, 78, 59, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #34d399;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 900;
+      font-size: 15px;
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.5), inset 0 0 8px rgba(52, 211, 153, 0.3);
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .tech-marker:hover {
+      transform: scale(1.2);
+      border-color: #ffffff;
+      color: #ffffff;
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.95), inset 0 0 12px rgba(52, 211, 153, 0.6);
+    }
+    .tech-marker::after {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border: 1px dashed rgba(52, 211, 153, 0.6);
+      border-radius: 50%;
+      animation: rotate-radar 10s linear infinite;
+    }
+    .tech-marker::before {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      border-radius: 50%;
+    }
+    @keyframes rotate-radar {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -254,43 +297,165 @@
       if (text.includes('114')) return '114';
     }
 
-    function getMarker3DPosition(report) {
+    function createLabelTexture(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Clear transparent
+      ctx.clearRect(0, 0, 256, 256);
+      
+      // Draw rectangular background
+      ctx.fillStyle = '#06173a';
+      ctx.fillRect(32, 80, 192, 96);
+      
+      // White border
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(32, 80, 192, 96);
+      
+      // Text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 72px Outfit, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 128, 128);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      return texture;
+    }
+
+    function createCompassTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      const cx = 256;
+      const cy = 256;
+      const r = 210;
+      
+      ctx.clearRect(0, 0, 512, 512);
+      
+      // Outer ring
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Inner dashed ring
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 15, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Major ticks
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 32; i++) {
+        const angle = (i * Math.PI) / 16;
+        const startR = (i % 4 === 0) ? r - 12 : r - 6;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle) * startR, cy + Math.sin(angle) * startR);
+        ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+        ctx.stroke();
+      }
+      
+      // Letters
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 36px Outfit, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Custom offset so letters sit nicely outside the ring
+      const letterR = r - 35;
+      
+      // Rotate and draw each cardinal point
+      const drawLetter = (text, angle) => {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.fillText(text, 0, -letterR);
+        ctx.restore();
+      };
+      
+      drawLetter('N', 0);
+      drawLetter('E', Math.PI / 2);
+      drawLetter('S', Math.PI);
+      drawLetter('W', -Math.PI / 2);
+      
+      // Draw Compass Star Points
+      const drawStarPoint = (angle, length, width) => {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        
+        // Right half (filled white)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -length);
+        ctx.lineTo(width, -width);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.stroke();
+        
+        // Left half (shaded grey)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -length);
+        ctx.lineTo(-width, -width);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.stroke();
+        
+        ctx.restore();
+      };
+      
+      // Major points
+      drawStarPoint(0, r - 45, 18);
+      drawStarPoint(Math.PI / 2, r - 45, 18);
+      drawStarPoint(Math.PI, r - 45, 18);
+      drawStarPoint(-Math.PI / 2, r - 45, 18);
+      
+      // Minor points
+      drawStarPoint(Math.PI / 4, r - 85, 10);
+      drawStarPoint(3 * Math.PI / 4, r - 85, 10);
+      drawStarPoint(-Math.PI / 4, r - 85, 10);
+      drawStarPoint(-3 * Math.PI / 4, r - 85, 10);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      return texture;
+    }
+
+    function getMarker3DPosition(report, index, urlCenterId) {
+      const isPilpilehue = urlCenterId === 'centro-pilpilehue';
+      if (isPilpilehue) {
+        // Exact 3D positions corresponding to hotspots 1, 2, 3, 4, 5 in user screenshots
+        const spots = [
+          new THREE.Vector3(0, -6, 40),    // Hotspot 1 (Bottom end of 101)
+          new THREE.Vector3(-12, -4, 0),   // Hotspot 2 (Left side of 102)
+          new THREE.Vector3(12, 2, -14),   // Hotspot 3 (Right side of 102/103)
+          new THREE.Vector3(0, -2, -40),   // Hotspot 4 (Top end of 103)
+          new THREE.Vector3(0, -6, -14)    // Hotspot 5 (Divider of 102/103)
+        ];
+        return spots[index % spots.length];
+      }
+
+      // Fallback grid lookup
       const cageId = detectCageId(report);
       if (!cageId) return null;
       const basePos = cageCoords[cageId];
       if (!basePos) return null;
-
-      const text = `${report.nombre} ${report.redes}`.toLowerCase();
-      
-      // Default: collar level (y = 8)
-      let x = basePos.x;
-      let y = 8; 
-      let z = basePos.z;
-
-      if (text.includes('fondo')) {
-        // Bottom of the net (y = -8)
-        y = -8;
-      } else if (text.includes('rotura') || text.includes('desgarro') || text.includes('falla') || text.includes('integridad')) {
-        // Middle wall of the net (y = -4) and slightly offset to show on the net wireframe
-        y = -4;
-        if (text.includes('oeste')) {
-          x -= 11; // shift to west face
-        } else if (text.includes('este')) {
-          x += 11; // shift to east face
-        } else {
-          z += 11; // shift to front face
-        }
-      } else if (text.includes('biofouling') || text.includes('algas') || text.includes('suciedad')) {
-        // Side wall of the net (y = 2)
-        y = 2;
-        z -= 11; // shift to back face
-      } else if (text.includes('línea de fondeo') || text.includes('anclaje') || text.includes('tensión') || text.includes('fondeo')) {
-        // On the mooring attachment collar
-        y = 8;
-        z += 11.5; // shift to the mooring hook point
-      }
-      
-      return new THREE.Vector3(x, y, z);
+      return new THREE.Vector3(basePos.x, 8, basePos.z);
     }
 
     async function loadReportsAndCreateMarkers() {
@@ -302,7 +467,6 @@
         } catch {}
       }
 
-      // 1. Try to fetch from Supabase table
       let reports = [];
       try {
         const { data: dbReports, error } = await supabaseClient
@@ -325,10 +489,9 @@
           }));
         }
       } catch (dbErr) {
-        console.warn("Supabase fetch failed in 3D Viewer, using local cache:", dbErr);
+        console.warn("Supabase fetch failed in 3D Viewer:", dbErr);
       }
 
-      // 2. Fallback to user localStorage cache
       if (reports.length === 0) {
         const saved = localStorage.getItem(`subvision_rov_reports_${email}`);
         if (saved) {
@@ -338,11 +501,9 @@
         }
       }
 
-      // Get active center ID from URL query parameters
       const urlParams = new URLSearchParams(window.location.search);
       const urlCenterId = urlParams.get('center') || 'centro-pilpilehue';
 
-      // Update center name label in HUD header dynamically
       const centerNameMap = {
         'centro-pilpilehue': 'Centro Pilpilehue',
         'centro-apiao': 'Centro Apiao',
@@ -352,63 +513,29 @@
         document.getElementById('center-name').innerText = centerNameMap[urlCenterId];
       }
 
-      // Filter reports to only show those belonging to the active center
       const centerReports = reports.filter(r => !r.centroId || r.centroId === urlCenterId);
 
-      // Order chronologically for marker numbering (oldest to newest)
+      // Order chronologically (oldest to newest) to match screenshot hotspot numbering 1, 2, 3, 4, 5
       const chronologicalReports = [...centerReports].reverse();
-      allReports = centerReports; // Keep descending order for allReports lookup
+      allReports = centerReports;
 
-      // Clear indicators from HUD
       const container = document.getElementById('hud-indicators-container');
       container.innerHTML = '';
       markers = [];
 
-      // Generate HTML overlays based on real reports coordinates
       chronologicalReports.forEach((report, index) => {
-        const cageId = detectCageId(report);
-        if (!cageId) return;
-
-        const markerPos = getMarker3DPosition(report);
+        const markerPos = getMarker3DPosition(report, index, urlCenterId);
         if (!markerPos) return;
 
-        // Determine severity styles
-        let badgeColor = 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
-        let badgeTextColor = 'text-emerald-200';
-        let label = `OK-${cageId}`;
-
-        if (report.puerto === 'Cerrado') {
-          const text = `${report.nombre} ${report.redes}`.toLowerCase();
-          if (text.includes('rotura') || text.includes('falla') || text.includes('tensión') || text.includes('desgarro') || text.includes('crítica')) {
-            badgeColor = 'bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.8)]';
-            badgeTextColor = 'text-red-200';
-            label = `Crit-${cageId}`;
-          } else {
-            badgeColor = 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]';
-            badgeTextColor = 'text-amber-200';
-            label = `Warn-${cageId}`;
-          }
-        } else {
-          const text = `${report.nombre} ${report.redes}`.toLowerCase();
-          if (text.includes('biofouling') || text.includes('depredador') || text.includes('desgaste')) {
-            badgeColor = 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]';
-            badgeTextColor = 'text-amber-200';
-            label = `Warn-${cageId}`;
-          }
-        }
-
         const markerEl = document.createElement('div');
-        markerEl.className = 'absolute pointer-events-auto cursor-pointer transition-all duration-300 flex flex-col items-center';
+        markerEl.className = 'absolute pointer-events-auto cursor-pointer transition-all duration-300';
         markerEl.style.display = 'none';
 
-        const markerNumber = index + 1; // 1 to N chronological index
+        const markerNumber = index + 1;
 
         markerEl.innerHTML = `
-          <div onclick="openDrawerForReport('${report.id}')" class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white font-extrabold text-sm select-none ${badgeColor}">
+          <div onclick="openDrawerForReport('${report.id}')" class="tech-marker">
             ${markerNumber}
-          </div>
-          <div class="hud-card px-1.5 py-0.5 rounded text-[7.5px] mt-1 font-mono uppercase tracking-wider ${badgeTextColor}">
-            ${label}
           </div>
         `;
 
@@ -416,12 +543,11 @@
 
         markers.push({
           id: report.id,
-          pos: markerPos, // Located at the exact corresponding depth/part of the net
+          pos: markerPos,
           el: markerEl
         });
       });
 
-      // Parse parameters to auto-highlight report from URL
       const params = new URLSearchParams(window.location.search);
       const reportId = params.get('report');
       if (reportId) {
@@ -430,22 +556,19 @@
     }
 
     function init() {
-      // 1. Scene Setup
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x050b18);
-      scene.fog = new THREE.FogExp2(0x050b18, 0.006);
+      scene.fog = new THREE.FogExp2(0x050b18, 0.005);
 
-      // 2. Camera Setup
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
-      camera.position.set(0, 75, 160);
+      // Camera angle adjusted to match the oblique top-down screenshot perspective
+      camera.position.set(70, 75, 110);
 
-      // 3. Renderer Setup
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-      // 4. Orbit Controls
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
@@ -453,7 +576,6 @@
       controls.minDistance = 20;
       controls.maxDistance = 400;
 
-      // 5. Lighting
       const ambientLight = new THREE.AmbientLight(0x0a224a, 1.8);
       scene.add(ambientLight);
 
@@ -461,20 +583,12 @@
       dirLight.position.set(50, 120, 40);
       scene.add(dirLight);
 
-      // 6. Seabed
       createSeabed();
-
-      // 7. 2x7 cages grid
       createCages();
-
-      // 8. Mooring Cables
       createMooringLines();
-
-      // Load data and create overlays markers
       loadReportsAndCreateMarkers();
 
       window.addEventListener('resize', onWindowResize);
-
       animate();
     }
 
@@ -483,11 +597,18 @@
       gridHelper.position.y = -25;
       scene.add(gridHelper);
 
-      const ringGeo = new THREE.RingGeometry(35, 36, 32);
-      const ringMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff, side: THREE.DoubleSide, transparent: true, opacity: 0.18 });
-      const compassMesh = new THREE.Mesh(ringGeo, ringMat);
-      compassMesh.rotation.x = Math.PI / 2;
-      compassMesh.position.set(0, -24.9, 0);
+      // Star Compass Rose on the water plane (left of cages grid) matching screenshot
+      const compassGeo = new THREE.PlaneGeometry(36, 36);
+      const compassTexture = createCompassTexture();
+      const compassMat = new THREE.MeshBasicMaterial({
+        map: compassTexture,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide
+      });
+      const compassMesh = new THREE.Mesh(compassGeo, compassMat);
+      compassMesh.rotation.x = -Math.PI / 2;
+      compassMesh.position.set(-42, 7.9, -15);
       scene.add(compassMesh);
 
       const planeGeo = new THREE.PlaneGeometry(1200, 1200);
@@ -500,93 +621,137 @@
 
     function createCages() {
       cageGroup = new THREE.Group();
-
-      const statusMap = {
-        101: 0, 102: 0, 103: 1, 104: 0, 105: 2, 106: 0, 
-        107: 2, 108: 2, 109: 0, 110: 1, 111: 0, 112: 1, 
-        113: 0, 114: 0
-      };
-
-      const colorMap = [
-        0x10b981, // 0: Optimal Green
-        0xf59e0b, // 1: Warning Amber
-        0xef4444  // 2: Critical Red
-      ];
-
-      // Long framework beams
-      const longBeamGeo = new THREE.BoxGeometry(196, 1.2, 1.2);
-      const beamMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 });
       
-      [-14, 0, 14].forEach(z => {
-        const beam = new THREE.Mesh(longBeamGeo, beamMat);
-        beam.position.set(0, 8, z);
-        cageGroup.add(beam);
-      });
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCenterId = urlParams.get('center') || 'centro-pilpilehue';
+      const isPilpilehue = urlCenterId === 'centro-pilpilehue';
 
-      // Cross beams
-      const crossBeamGeo = new THREE.BoxGeometry(1.2, 1.2, 30);
-      for (let c = 0; c < 8; c++) {
-        const x = (c - 3.5) * 28;
-        const beam = new THREE.Mesh(crossBeamGeo, beamMat);
-        beam.position.set(x, 8, 0);
-        cageGroup.add(beam);
-      }
-
-      // Generate grid
-      for (let r = 0; r < 2; r++) {
-        const z = (r - 0.5) * 28;
+      if (isPilpilehue) {
+        // 1x3 Cage Grid for Centro Pilpilehue (matching screenshot cage layout)
+        const longBeamGeo = new THREE.BoxGeometry(1.2, 1.2, 84);
+        const beamMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 });
         
-        for (let c = 0; c < 7; c++) {
-          const x = (c - 3) * 28;
-          
-          const cageId = (r === 0) ? (113 - c * 2) : (114 - c * 2);
-          const cageStatus = statusMap[cageId] !== undefined ? statusMap[cageId] : 0;
-          const cageColor = colorMap[cageStatus];
+        [-12, 12].forEach(x => {
+          const beam = new THREE.Mesh(longBeamGeo, beamMat);
+          beam.position.set(x, 8, 0);
+          cageGroup.add(beam);
+        });
 
+        const crossBeamGeo = new THREE.BoxGeometry(24, 1.2, 1.2);
+        [-42, -14, 14, 42].forEach(z => {
+          const beam = new THREE.Mesh(crossBeamGeo, beamMat);
+          beam.position.set(0, 8, z);
+          cageGroup.add(beam);
+        });
+
+        const cagesData = [
+          { id: '103', z: -28 },
+          { id: '102', z: 0 },
+          { id: '101', z: 28 }
+        ];
+
+        cagesData.forEach(c => {
           // Platform collar
           const collarGeo = new THREE.BoxGeometry(24, 0.8, 24);
           const collarMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5 });
           const collar = new THREE.Mesh(collarGeo, collarMat);
-          collar.position.set(x, 8, z);
+          collar.position.set(0, 8, c.z);
           cageGroup.add(collar);
 
-          // Net wireframe
+          // Net wireframe (solid red edges)
           const netGeo = new THREE.BoxGeometry(22, 16, 22);
           const wireframe = new THREE.EdgesGeometry(netGeo);
           const lineMat = new THREE.LineBasicMaterial({ 
-            color: cageColor, 
-            linewidth: 1.5,
+            color: 0xef4444, 
+            linewidth: 2,
             transparent: true,
-            opacity: 0.65
+            opacity: 0.85
           });
           const netLine = new THREE.LineSegments(wireframe, lineMat);
-          netLine.position.set(x, 0, z);
+          netLine.position.set(0, 0, c.z);
           cageGroup.add(netLine);
 
-          // Net walls
+          // Net walls (transparent red fill)
           const netWallMat = new THREE.MeshBasicMaterial({
-            color: cageColor,
+            color: 0xef4444,
             transparent: true,
-            opacity: 0.04,
+            opacity: 0.08,
             side: THREE.DoubleSide
           });
           const netWall = new THREE.Mesh(netGeo, netWallMat);
-          netWall.position.set(x, 0, z);
+          netWall.position.set(0, 0, c.z);
           cageGroup.add(netWall);
 
-          // Critical indicator line highlights
-          if (cageStatus === 2) {
-            const alertGeo = new THREE.BoxGeometry(24.5, 17, 24.5);
-            const alertWire = new THREE.EdgesGeometry(alertGeo);
-            const alertMat = new THREE.LineBasicMaterial({ 
-              color: 0xef4444, 
-              transparent: true, 
-              opacity: 0.7 
-            });
-            const alertBox = new THREE.LineSegments(alertWire, alertMat);
-            alertBox.position.set(x, 0, z);
-            alertBox.name = `crit-alert-${cageId}`;
-            cageGroup.add(alertBox);
+          // 3D Dark Blue rectangular label inside cage
+          const labelGeo = new THREE.PlaneGeometry(12, 6);
+          const labelMat = new THREE.MeshBasicMaterial({ map: createLabelTexture(c.id), side: THREE.DoubleSide });
+          const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+          labelMesh.rotation.x = -Math.PI / 2;
+          labelMesh.position.set(0, 8.15, c.z);
+          cageGroup.add(labelMesh);
+        });
+      } else {
+        // 2x7 cages grid fallback for other centers
+        const statusMap = {
+          101: 0, 102: 0, 103: 1, 104: 0, 105: 2, 106: 0, 
+          107: 2, 108: 2, 109: 0, 110: 1, 111: 0, 112: 1, 
+          113: 0, 114: 0
+        };
+
+        const colorMap = [0x10b981, 0xf59e0b, 0xef4444];
+
+        const longBeamGeo = new THREE.BoxGeometry(196, 1.2, 1.2);
+        const beamMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 });
+        
+        [-14, 0, 14].forEach(z => {
+          const beam = new THREE.Mesh(longBeamGeo, beamMat);
+          beam.position.set(0, 8, z);
+          cageGroup.add(beam);
+        });
+
+        const crossBeamGeo = new THREE.BoxGeometry(1.2, 1.2, 30);
+        for (let c = 0; c < 8; c++) {
+          const x = (c - 3.5) * 28;
+          const beam = new THREE.Mesh(crossBeamGeo, beamMat);
+          beam.position.set(x, 8, 0);
+          cageGroup.add(beam);
+        }
+
+        for (let r = 0; r < 2; r++) {
+          const z = (r - 0.5) * 28;
+          for (let c = 0; c < 7; c++) {
+            const x = (c - 3) * 28;
+            const cageId = (r === 0) ? (113 - c * 2) : (114 - c * 2);
+            const cageStatus = statusMap[cageId] !== undefined ? statusMap[cageId] : 0;
+            const cageColor = colorMap[cageStatus];
+
+            const collarGeo = new THREE.BoxGeometry(24, 0.8, 24);
+            const collarMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5 });
+            const collar = new THREE.Mesh(collarGeo, collarMat);
+            collar.position.set(x, 8, z);
+            cageGroup.add(collar);
+
+            const netGeo = new THREE.BoxGeometry(22, 16, 22);
+            const wireframe = new THREE.EdgesGeometry(netGeo);
+            const lineMat = new THREE.LineBasicMaterial({ color: cageColor, linewidth: 1.5, transparent: true, opacity: 0.65 });
+            const netLine = new THREE.LineSegments(wireframe, lineMat);
+            netLine.position.set(x, 0, z);
+            cageGroup.add(netLine);
+
+            const netWallMat = new THREE.MeshBasicMaterial({ color: cageColor, transparent: true, opacity: 0.04, side: THREE.DoubleSide });
+            const netWall = new THREE.Mesh(netGeo, netWallMat);
+            netWall.position.set(x, 0, z);
+            cageGroup.add(netWall);
+
+            if (cageStatus === 2) {
+              const alertGeo = new THREE.BoxGeometry(24.5, 17, 24.5);
+              const alertWire = new THREE.EdgesGeometry(alertGeo);
+              const alertMat = new THREE.LineBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.7 });
+              const alertBox = new THREE.LineSegments(alertWire, alertMat);
+              alertBox.position.set(x, 0, z);
+              alertBox.name = `crit-alert-${cageId}`;
+              cageGroup.add(alertBox);
+            }
           }
         }
       }
@@ -595,16 +760,37 @@
     }
 
     function createMooringLines() {
-      const anchorPoints = [
-        { start: new THREE.Vector3(-98, 8, -14), end: new THREE.Vector3(-140, -25, -60) },
-        { start: new THREE.Vector3(-98, 8, 14), end: new THREE.Vector3(-140, -25, 60) },
-        { start: new THREE.Vector3(98, 8, -14), end: new THREE.Vector3(140, -25, -60) },
-        { start: new THREE.Vector3(98, 8, 14), end: new THREE.Vector3(140, -25, 60) },
-        { start: new THREE.Vector3(0, 8, -14), end: new THREE.Vector3(0, -25, -80) },
-        { start: new THREE.Vector3(0, 8, 14), end: new THREE.Vector3(0, -25, 80) },
-        { start: new THREE.Vector3(-98, 8, 0), end: new THREE.Vector3(-160, -25, 0) },
-        { start: new THREE.Vector3(98, 8, 0), end: new THREE.Vector3(160, -25, 0) }
-      ];
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCenterId = urlParams.get('center') || 'centro-pilpilehue';
+      const isPilpilehue = urlCenterId === 'centro-pilpilehue';
+
+      let anchorPoints = [];
+
+      if (isPilpilehue) {
+        // Mooring lines adapted to the 1x3 cage module
+        anchorPoints = [
+          { start: new THREE.Vector3(-12, 8, -42), end: new THREE.Vector3(-60, -25, -90) },
+          { start: new THREE.Vector3(12, 8, -42), end: new THREE.Vector3(60, -25, -90) },
+          { start: new THREE.Vector3(-12, 8, 42), end: new THREE.Vector3(-60, -25, 90) },
+          { start: new THREE.Vector3(12, 8, 42), end: new THREE.Vector3(60, -25, 90) },
+          { start: new THREE.Vector3(-12, 8, -14), end: new THREE.Vector3(-70, -25, -30) },
+          { start: new THREE.Vector3(12, 8, -14), end: new THREE.Vector3(70, -25, -30) },
+          { start: new THREE.Vector3(-12, 8, 14), end: new THREE.Vector3(-70, -25, 30) },
+          { start: new THREE.Vector3(12, 8, 14), end: new THREE.Vector3(70, -25, 30) }
+        ];
+      } else {
+        // Fallback mooring lines
+        anchorPoints = [
+          { start: new THREE.Vector3(-98, 8, -14), end: new THREE.Vector3(-140, -25, -60) },
+          { start: new THREE.Vector3(-98, 8, 14), end: new THREE.Vector3(-140, -25, 60) },
+          { start: new THREE.Vector3(98, 8, -14), end: new THREE.Vector3(140, -25, -60) },
+          { start: new THREE.Vector3(98, 8, 14), end: new THREE.Vector3(140, -25, 60) },
+          { start: new THREE.Vector3(0, 8, -14), end: new THREE.Vector3(0, -25, -80) },
+          { start: new THREE.Vector3(0, 8, 14), end: new THREE.Vector3(0, -25, 80) },
+          { start: new THREE.Vector3(-98, 8, 0), end: new THREE.Vector3(-160, -25, 0) },
+          { start: new THREE.Vector3(98, 8, 0), end: new THREE.Vector3(160, -25, 0) }
+        ];
+      }
 
       anchorPoints.forEach(pt => {
         const points = [pt.start, pt.end];
@@ -619,58 +805,6 @@
         anchor.position.copy(pt.end);
         scene.add(anchor);
       });
-    }
-
-    function updateMarkers() {
-      const tempV = new THREE.Vector3();
-
-      markers.forEach(marker => {
-        tempV.copy(marker.pos);
-        
-        // Sync with the platform wave motion so markers stay glued
-        if (cageGroup) {
-          tempV.y += cageGroup.position.y;
-        }
-
-        tempV.project(camera);
-
-        if (tempV.z > 1) {
-          marker.el.style.display = 'none';
-          return;
-        }
-
-        const x = (tempV.x *  .5 + .5) * window.innerWidth;
-        const y = (tempV.y * -.5 + .5) * window.innerHeight;
-
-        marker.el.style.left = `${x - 16}px`;
-        marker.el.style.top = `${y - 16}px`;
-        marker.el.style.display = 'block';
-      });
-    }
-
-    function animate() {
-      requestAnimationFrame(animate);
-      
-      controls.update();
-
-      const time = Date.now() * 0.0005;
-
-      if (cageGroup) {
-        cageGroup.position.y = Math.sin(time) * 0.35;
-        cageGroup.rotation.x = Math.sin(time * 0.8) * 0.005;
-        cageGroup.rotation.z = Math.cos(time * 0.8) * 0.005;
-        
-        [105, 107, 108].forEach(id => {
-          const highlight = cageGroup.getObjectByName(`crit-alert-${id}`);
-          if (highlight) {
-            highlight.material.opacity = 0.3 + Math.sin(time * 8) * 0.4;
-          }
-        });
-      }
-
-      updateMarkers();
-
-      renderer.render(scene, camera);
     }
 
     function onWindowResize() {
