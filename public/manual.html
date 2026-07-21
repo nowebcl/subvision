@@ -245,7 +245,7 @@
       <li><strong>Registro de Nuevos Operadores y Centros:</strong> Enlace "¿No tienes cuenta? Registra tu Usuario y Centro". Esto despliega un formulario interactivo estructurado en dos pasos:
         <ul>
           <li><strong>Paso 1: Datos del Operador:</strong> Nombre, email de acceso, contraseña y rol (Jefe de Centro, Piloto ROV, etc.).</li>
-          <li><strong>Paso 2: Nuevo Centro Operativo:</strong> Nombre del centro (ej. *Centro Castro*), ubicación y región. Al guardar, el sistema crea dinámicamente el centro con jaulas y telemetría de prueba en la base de datos de sesión.</li>
+          <li><strong>Paso 2: Nuevo Centro Operativo:</strong> Nombre del centro (ej. *Centro Castro*), ubicación y región. Al guardar, el sistema crea dinámicamente el centro con módulos y telemetría de prueba en la base de datos de sesión.</li>
         </ul>
       </li>
     </ul>
@@ -274,21 +274,21 @@
     <p>Métricas oceanográficas en tiempo real:</p>
     <ul>
       <li><strong>Tarjetas KPI:</strong> Temperatura de agua, Oxígeno disuelto (alerta si cae por debajo de 6.0 mg/L), Promedio de mallas y Tensión pico de fondeo.</li>
-      <li><strong>Red de Integridad Circular:</strong> Gráfico de anillo SVG animado que promedia la salud de las jaulas del centro.</li>
+      <li><strong>Red de Integridad Circular:</strong> Gráfico de anillo SVG animado que promedia la salud de los módulos del centro.</li>
       <li><strong>CCTV con Inteligencia Artificial:</strong> Simulación de cámara ROV con radar acústico y cajas de delimitación (bounding boxes) que detectan roturas de mallas y conteo de biomasa.</li>
       <li><strong>Gráfico Histórico:</strong> Gráfica lineal interactiva SVG que muestra niveles de oxígeno del centro con información flotante (tooltips) al pasar el cursor.</li>
     </ul>
 
     <h3>C. Estructuras y Fondeos</h3>
-    <p>Esquema de anclaje de cables de tracción y lista de jaulas con pesos de biomasa.</p>
+    <p>Esquema de anclaje de cables de tracción y lista de módulos con pesos de biomasa.</p>
 
-    <h2>4. Módulo 2: Instalaciones</h2>
-    <p>Monitoreo mecánico y biológico individual de cada jaula de cultivo (Centro Pilpilehue, Apiao o Quellón) con una carta radar SVG que dibuja los vectores de tensión en grados y tracción kN de los fondeos de anclaje.</p>
+    <h2>4. Módulo 2: Módulos</h2>
+    <p>Monitoreo mecánico y biológico individual de cada módulo de cultivo (Centro Pilpilehue, Apiao o Quellón) con una carta radar SVG que dibuja los vectores de tensión en grados y tracción kN de los fondeos de anclaje.</p>
 
     <h2>5. Módulo 3: Checklist de Inspección</h2>
     <p>Formulario para registrar auditorías de buzos (grilletes, limpieza de mallas, biofouling, extracción de mortalidad orgánica). Guarda un historial local cronológico.</p>
 
-    <h2>6. Módulo 4: AI Multimodal</h2>
+    <h2>6. Módulo 4: Agente IA Servirov</h2>
     <p>Chat interactivo con la IA donde el operador puede simular la carga de ecogramas acústicos, fotos submarinas de ROVs o reportes técnicos, obteniendo diagnósticos detallados sobre rasgaduras y salud biológica.</p>
 
     <h2>7. Módulo 5: CCTV Video AI</h2>
@@ -309,11 +309,11 @@
     <div class="note-box" style="background-color: var(--cyan-50); border-left-color: var(--cyan-600);">
       <p style="color: var(--primary-dark); font-weight: 700;">👣 WALKTHROUGH DE PRESENTACIÓN PASO A PASO:</p>
       <ol style="margin-top: 8px; color: var(--slate-800); font-size: 12px; padding-left: 20px;">
-        <li style="margin-bottom: 8px;"><strong>Paso 1: Demo de Registro (Login/Signup):</strong> Comience en la pantalla de acceso. Haga clic en <em>"Registra tu Usuario y Centro"</em>. Ingrese un nombre de centro nuevo (ej. "Centro Castro") y regístrese. Resalte que la plataforma autogenera de inmediato toda la telemetría, jaulas y fondeos para ese centro.</li>
+        <li style="margin-bottom: 8px;"><strong>Paso 1: Demo de Registro (Login/Signup):</strong> Comience en la pantalla de acceso. Haga clic en <em>"Registra tu Usuario y Centro"</em>. Ingrese un nombre de centro nuevo (ej. "Centro Castro") y regístrese. Resalte que la plataforma autogenera de inmediato toda la telemetría, módulos y fondeos para ese centro.</li>
         <li style="margin-bottom: 8px;"><strong>Paso 2: Dashboard y Transición Dual-Theme:</strong> Al entrar, muestre la cabecera clara optimizada para el pontón. Navegue por las pestañas de <em>Informes ROV</em> (cree un nuevo informe técnico en vivo para demostrar el dinamismo) y <em>Telemetría y CCTV</em> (pase el cursor sobre el gráfico lineal interactivo para ver los tooltips de oxígeno).</li>
-        <li style="margin-bottom: 8px;"><strong>Paso 3: Visor Submarino 3D:</strong> Vaya a la sección de <em>Instalaciones</em>. Filtre las jaulas y haga clic en el botón <strong>"Ver Visor en Tiempo Real (3D)"</strong>. Explique cómo el sistema pasa a Modo Oscuro para simular la consola del piloto. Rote, haga zoom en las redes 3D con el mouse, apunte la anomalía de revisión (ícono rojo con número de inspecciones) y finalmente regrese al panel principal haciendo clic en <strong>"← Volver"</strong>.</li>
+        <li style="margin-bottom: 8px;"><strong>Paso 3: Visor Submarino 3D:</strong> Vaya a la sección de <em>Módulos</em>. Filtre los módulos y haga clic en el botón <strong>"Ver Visor en Tiempo Real (3D)"</strong>. Explique cómo el sistema pasa a Modo Oscuro para simular la consola del piloto. Rote, haga zoom en las redes 3D con el mouse, apunte la anomalía de revisión (ícono rojo con número de inspecciones) y finalmente regrese al panel principal haciendo clic en <strong>"← Volver"</strong>.</li>
         <li style="margin-bottom: 8px;"><strong>Paso 4: Checklist Técnico Móvil:</strong> Navegue a la pestaña <em>Checklist de Inspección</em>. Simule que un operario está en terreno en su celular: marque grilletes revisados, biofouling medio, presione enviar y muestre la animación de sincronización que actualiza el historial en la base de datos local.</li>
-        <li style="margin-bottom: 8px;"><strong>Paso 5: Módulo de IA Multimodal (Generar Informe PDF):</strong> Vaya a <em>Asistente de AI Multimodal</em>. Haga clic en una plantilla de consulta rápida. Muestre en la ventana cómo el asistente de IA analiza la imagen, diagnostica la rotura de la malla y genera un reporte estructurado.</li>
+        <li style="margin-bottom: 8px;"><strong>Paso 5: Módulo Agente IA Servirov (Generar Informe PDF):</strong> Vaya a <em>Agente IA Servirov</em>. Haga clic en una plantilla de consulta rápida. Muestre en la ventana cómo el asistente de IA analiza la imagen, diagnostica la rotura de la malla y genera un reporte estructurado.</li>
         <li style="margin-bottom: 8px;"><strong>Paso 6: Centro de Control IA (CCTV en Vivo):</strong> Vaya a <em>Detecciones IA en Vivo</em>. Muestre la cámara ROV simulada. Encienda y apague los algoritmos usando los interruptores (toggles) del panel derecho (conteo de biomasa, segmentación de peces y detección de fisuras en costuras) para demostrar cómo cambian los cuadros delimitadores en tiempo real.</li>
         <li style="margin-bottom: 8px;"><strong>Paso 7: Automatización Real de WhatsApp (n8n):</strong> Vaya a <em>Automatización</em>. Muestre las reglas dinámicas configuradas. Explique que SubVision se integra directamente con **n8n Webhook API** escribiendo la URL del flujo en el campo de entrada. Haga clic en <strong>"Enviar Test"</strong> para demostrar el disparo del webhook en segundo plano.</li>
       </ol>

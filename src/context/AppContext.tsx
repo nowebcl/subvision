@@ -12,6 +12,16 @@ import {
 } from '../data/mockData';
 import { supabase } from '../lib/supabase';
 
+export interface ROVFinding {
+  id: string;
+  jaula: string;
+  seccion: string;
+  clasificacion: string;
+  observacion: string;
+  fotoUrl: string;
+  profundidad: string;
+}
+
 export interface ROVReport {
   id: string;
   fecha: string;
@@ -23,18 +33,318 @@ export interface ROVReport {
   redes: string;
   centroId?: string;
   userEmail?: string;
+  findings?: ROVFinding[];
 }
 
 const initialRovReports: ROVReport[] = [
-  { id: 'r-pilpilehue-1', fecha: '2026-07-18', nombre: 'INSPECCIÓN DE REDES JAULA 103', jefeCentro: 'Andrés Mansilla', piloto: 'Operador Subvision', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED PECERA (Desgarro de 1.2m en cuadrante inferior sur, reparado temporalmente)', centroId: 'centro-pilpilehue', userEmail: 'operador@servirov.cl' },
-  { id: 'r-pilpilehue-2', fecha: '2026-07-17', nombre: 'AUDITORÍA DE VECTORES DE ANCLAJE B2', jefeCentro: 'Andrés Mansilla', piloto: 'Operador Subvision', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'LÍNEA DE ANCLAJE B2 (Tensión máxima de 148.9 kN registrada durante oscilación de corriente)', centroId: 'centro-pilpilehue', userEmail: 'operador@servirov.cl' },
-  { id: 'r-pilpilehue-3', fecha: '2026-07-16', nombre: 'MONITOREO DE BIOFOULING JAULA 105', jefeCentro: 'Andrés Mansilla', piloto: 'Operador Subvision', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA (Nivel de adherencia de algas moderado, requiere limpieza programada en 5 días)', centroId: 'centro-pilpilehue', userEmail: 'operador@servirov.cl' },
-  { id: 'r-pilpilehue-4', fecha: '2026-07-15', nombre: 'AUDITORÍA DE INTEGRIDAD CABEZAL JAULA 103', jefeCentro: 'Andrés Mansilla', piloto: 'Operador Subvision', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED LOBERA (Desgaste en unión de paño este a 2m de profundidad)', centroId: 'centro-pilpilehue', userEmail: 'operador@servirov.cl' },
-  { id: 'r-pilpilehue-5', fecha: '2026-07-14', nombre: 'INSPECCIÓN DE UNIÓN DE PAÑO JAULA 102-103', jefeCentro: 'Andrés Mansilla', piloto: 'Operador Subvision', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA (Revisión de costuras y tensores inferiores a 6m)', centroId: 'centro-pilpilehue', userEmail: 'operador@servirov.cl' },
-  { id: 'r-quellon-1', fecha: '2026-07-14', nombre: 'REVISIÓN DE BIOFOULING JAULA 110', jefeCentro: 'Carlos Peña', piloto: 'Cristian Barcena Córdova', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA (Acumulación moderada de algas en cuadrante norte)', centroId: 'centro-quellon' },
-  { id: 'r-quellon-2', fecha: '2026-07-12', nombre: 'MONITOREO DE BIOMASA JAULA 101', jefeCentro: 'Carlos Peña', piloto: 'Carlos Varas', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA; RED LOBERA (Sin observaciones, comportamiento normal)', centroId: 'centro-quellon' },
-  { id: 'r-apiao-1', fecha: '2026-07-14', nombre: 'INSPECCIÓN DE PARCHES JAULA 107', jefeCentro: 'Juan Silva', piloto: 'Hugo Díaz', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED PECERA (Desgarro menor de 0.5m en cuadrante este)', centroId: 'centro-apiao' },
-  { id: 'r-apiao-2', fecha: '2026-07-11', nombre: 'LIMPIEZA DE MALLA JAULA 112', jefeCentro: 'Juan Silva', piloto: 'Daniel Toro', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED LOBERA (Retiro de suciedad y adherencias completo)', centroId: 'centro-apiao' }
+  {
+    id: 'r-pilpilehue-today',
+    fecha: '2026-07-21',
+    nombre: 'ROTURA CRÍTICA DE MALLA JAULA 103',
+    jefeCentro: 'Andrés Mansilla',
+    piloto: 'Cristian Barcena Córdova (Piloto ROV)',
+    empresa: 'SERVIROV',
+    puerto: 'Cerrado',
+    redes: 'RED PECERA (Rotura crítica de malla con desgarro vertical de 1.2 metros en fondo)',
+    centroId: 'centro-pilpilehue',
+    userEmail: 'operador@servirov.cl',
+    findings: [
+      {
+        id: 'f-today-1',
+        jaula: '103',
+        seccion: 'Fondo',
+        clasificacion: 'Rotura de Red',
+        observacion: 'Se detecta rotura de malla pecera jaula 103 con desgarro vertical de 1.2 metros en fondo.',
+        fotoUrl: '/report_pecera409.jpg',
+        profundidad: '20 metros'
+      },
+      {
+        id: 'f-today-2',
+        jaula: '105',
+        seccion: 'Lateral',
+        clasificacion: 'Biofouling pesado',
+        observacion: 'Nivel de adherencia de algas moderado en cuadrante norte del paño de jaula 105.',
+        fotoUrl: '/report_ins311.png',
+        profundidad: '12 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-pilpilehue-1',
+    fecha: '2026-07-20',
+    nombre: 'AUDITORÍA DE VECTORES DE ANCLAJE B2',
+    jefeCentro: 'Andrés Mansilla',
+    piloto: 'Cristian Barcena Córdova (Piloto ROV)',
+    empresa: 'SERVIROV',
+    puerto: 'Cerrado',
+    redes: 'LÍNEA DE ANCLAJE B2 (Tensión inusual de 148.9 kN registrada durante corriente fuerte)',
+    centroId: 'centro-pilpilehue',
+    userEmail: 'operador@servirov.cl',
+    findings: [
+      {
+        id: 'f-1-1',
+        jaula: '108',
+        seccion: 'Fondo',
+        clasificacion: 'Sobretensión Fondeo',
+        observacion: 'Tensión máxima de 148.9 kN registrada durante oscilación de corriente en anclaje B2.',
+        fotoUrl: '/report_ins311.png',
+        profundidad: '24 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-pilpilehue-2',
+    fecha: '2026-07-19',
+    nombre: 'INSPECCIÓN DE UNIÓN DE PAÑO JAULA 101-102',
+    jefeCentro: 'Andrés Mansilla',
+    piloto: 'Cristian Barcena Córdova (Piloto ROV)',
+    empresa: 'SERVIROV',
+    puerto: 'Abierto',
+    redes: 'RED PECERA (Inspección rutinaria de paños en módulo 101 y costuras de unión inferior)',
+    centroId: 'centro-pilpilehue',
+    userEmail: 'operador@servirov.cl',
+    findings: [
+      {
+        id: 'f-2-1',
+        jaula: '101',
+        seccion: 'Fondo',
+        clasificacion: 'Sin Hallazgos',
+        observacion: 'Inspección de cabo de unión inferior conforme sin desgarros.',
+        fotoUrl: '/report_ins301.png',
+        profundidad: '15 metros'
+      },
+      {
+        id: 'f-2-2',
+        jaula: '102',
+        seccion: 'Fondo',
+        clasificacion: 'Sin Hallazgos',
+        observacion: 'Revisión de costuras y uniones de paños sin novedades.',
+        fotoUrl: '/report_j303.png',
+        profundidad: '15 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-pilpilehue-3',
+    fecha: '2026-07-18',
+    nombre: 'MONITOREO DE INTEGRIDAD JAULA 103 Y 104',
+    jefeCentro: 'Andrés Mansilla',
+    piloto: 'Carlos Varas',
+    empresa: 'SERVIROV',
+    puerto: 'Cerrado',
+    redes: 'RED PECERA (Desgarro de 1.0m en cuadrante inferior sur, reparado temporalmente)',
+    centroId: 'centro-pilpilehue',
+    userEmail: 'operador@servirov.cl',
+    findings: [
+      {
+        id: 'f-3-1',
+        jaula: '103',
+        seccion: 'Fondo',
+        clasificacion: 'Rotura de Red',
+        observacion: 'Desgarro de 1.0m en cuadrante inferior sur, reparado temporalmente.',
+        fotoUrl: '/report_pecera409.jpg',
+        profundidad: '20 metros'
+      },
+      {
+        id: 'f-3-2',
+        jaula: '104',
+        seccion: 'Fondo',
+        clasificacion: 'Sin Hallazgos',
+        observacion: 'Inspección rutinaria del cabezal de la jaula 104 sin observaciones.',
+        fotoUrl: '/report_ins301.png',
+        profundidad: '15 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-pilpilehue-4',
+    fecha: '2026-07-17',
+    nombre: 'MONITOREO DE BIOFOULING JAULA 108',
+    jefeCentro: 'Andrés Mansilla',
+    piloto: 'Carlos Varas',
+    empresa: 'SERVIROV',
+    puerto: 'Cerrado',
+    redes: 'LÍNEA DE ANCLAJE (Tensión de 142.5 kN registrada en fondeo, bajo monitoreo)',
+    centroId: 'centro-pilpilehue',
+    userEmail: 'operador@servirov.cl',
+    findings: [
+      {
+        id: 'f-4-1',
+        jaula: '108',
+        seccion: 'Fondo',
+        clasificacion: 'Sobretensión Fondeo',
+        observacion: 'Tensión de 142.5 kN registrada en fondeo, bajo monitoreo constante.',
+        fotoUrl: '/report_ins311.png',
+        profundidad: '24 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-pilpilehue-5',
+    fecha: '2026-07-16',
+    nombre: 'AUDITORÍA DE BIOFOULING JAULA 105-106',
+    jefeCentro: 'Andrés Mansilla',
+    piloto: 'Hugo Díaz',
+    empresa: 'SERVIROV',
+    puerto: 'Abierto',
+    redes: 'RED PECERA (Adherencia de algas moderada en jaula 105, limpieza programada)',
+    centroId: 'centro-pilpilehue',
+    userEmail: 'operador@servirov.cl',
+    findings: [
+      {
+        id: 'f-5-1',
+        jaula: '105',
+        seccion: 'Lateral',
+        clasificacion: 'Biofouling pesado',
+        observacion: 'Nivel de adherencia de algas moderado, requiere limpieza programada en 5 días.',
+        fotoUrl: '/report_ins311.png',
+        profundidad: '12 metros'
+      },
+      {
+        id: 'f-5-2',
+        jaula: '106',
+        seccion: 'Fondo',
+        clasificacion: 'Sin Hallazgos',
+        observacion: 'Inspección de fondo de módulo 106 sin observaciones.',
+        fotoUrl: '/report_j303.png',
+        profundidad: '18 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-pilpilehue-6',
+    fecha: '2026-07-15',
+    nombre: 'AUDITORÍA DE INTEGRIDAD CABEZAL JAULA 103',
+    jefeCentro: 'Andrés Mansilla',
+    piloto: 'Hugo Díaz',
+    empresa: 'SERVIROV',
+    puerto: 'Cerrado',
+    redes: 'RED LOBERA (Desgaste en unión de paño este a 2m de profundidad)',
+    centroId: 'centro-pilpilehue',
+    userEmail: 'operador@servirov.cl',
+    findings: [
+      {
+        id: 'f-6-1',
+        jaula: '103',
+        seccion: 'Lateral',
+        clasificacion: 'Sin Hallazgos',
+        observacion: 'Desgaste menor en unión de paño este a 2m de profundidad en red lobera.',
+        fotoUrl: '/report_ins301.png',
+        profundidad: '15 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-pilpilehue-7',
+    fecha: '2026-07-14',
+    nombre: 'INSPECCIÓN DE UNIÓN DE PAÑO JAULA 102',
+    jefeCentro: 'Andrés Mansilla',
+    piloto: 'Daniel Toro',
+    empresa: 'SERVIROV',
+    puerto: 'Abierto',
+    redes: 'RED PECERA (Revisión de costuras y tensores inferiores a 6m en módulo 102)',
+    centroId: 'centro-pilpilehue',
+    userEmail: 'operador@servirov.cl',
+    findings: [
+      {
+        id: 'f-7-1',
+        jaula: '102',
+        seccion: 'Fondo',
+        clasificacion: 'Sin Hallazgos',
+        observacion: 'Revisión de costuras y tensores inferiores a 6m conforme.',
+        fotoUrl: '/report_j303.png',
+        profundidad: '15 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-quellon-1',
+    fecha: '2026-07-14',
+    nombre: 'REVISIÓN DE BIOFOULING JAULA 403',
+    jefeCentro: 'Carlos Peña',
+    piloto: 'Cristian Barcena Córdova',
+    empresa: 'SERVIROV',
+    puerto: 'Abierto',
+    redes: 'RED PECERA (Acumulación moderada de algas en cuadrante norte)',
+    centroId: 'centro-quellon',
+    findings: [
+      {
+        id: 'f-q-1',
+        jaula: '403',
+        seccion: 'Lateral',
+        clasificacion: 'Biofouling pesado',
+        observacion: 'Acumulación moderada de algas en cuadrante norte.',
+        fotoUrl: '/report_ins311.png',
+        profundidad: '10 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-quellon-2',
+    fecha: '2026-07-12',
+    nombre: 'MONITOREO DE BIOMASA JAULA 401',
+    jefeCentro: 'Carlos Peña',
+    piloto: 'Carlos Varas',
+    empresa: 'SERVIROV',
+    puerto: 'Abierto',
+    redes: 'RED PECERA; RED LOBERA (Sin observaciones, comportamiento normal)',
+    centroId: 'centro-quellon',
+    findings: [
+      {
+        id: 'f-q-2',
+        jaula: '401',
+        seccion: 'Fondo',
+        clasificacion: 'Sin Hallazgos',
+        observacion: 'Comportamiento normal y mallas en buen estado.',
+        fotoUrl: '/report_ins301.png',
+        profundidad: '15 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-apiao-1',
+    fecha: '2026-07-14',
+    nombre: 'INSPECCIÓN DE PARCHES JAULA 303',
+    jefeCentro: 'Juan Silva',
+    piloto: 'Hugo Díaz',
+    empresa: 'SERVIROV',
+    puerto: 'Cerrado',
+    redes: 'RED PECERA (Desgarro menor de 0.5m en cuadrante este)',
+    centroId: 'centro-apiao',
+    findings: [
+      {
+        id: 'f-a-1',
+        jaula: '303',
+        seccion: 'Lateral',
+        clasificacion: 'Rotura de Red',
+        observacion: 'Desgarro menor de 0.5m en cuadrante este.',
+        fotoUrl: '/report_pecera409.jpg',
+        profundidad: '8 metros'
+      }
+    ]
+  },
+  {
+    id: 'r-apiao-2',
+    fecha: '2026-07-11',
+    nombre: 'LIMPIEZA DE MALLA JAULA 302',
+    jefeCentro: 'Juan Silva',
+    piloto: 'Daniel Toro',
+    empresa: 'SERVIROV',
+    puerto: 'Abierto',
+    redes: 'RED LOBERA (Retiro de suciedad y adherencias completo)',
+    centroId: 'centro-apiao',
+    findings: [
+      {
+        id: 'f-a-2',
+        jaula: '302',
+        seccion: 'Fondo',
+        clasificacion: 'Sin Hallazgos',
+        observacion: 'Retiro de suciedad y adherencias completo.',
+        fotoUrl: '/report_ins301.png',
+        profundidad: '12 metros'
+      }
+    ]
+  }
 ];
 
 export interface AppContextType {
@@ -79,8 +389,27 @@ export interface AppContextType {
   changeUserPassword: (email: string, newPasswordId: string) => void;
   activities: any[];
   logActivity: (action: string, target: string) => void;
-  activeTab: 'telemetry' | 'rov' | 'structures' | 'admin';
-  setActiveTab: React.Dispatch<React.SetStateAction<'telemetry' | 'rov' | 'structures' | 'admin'>>;
+  activeTab: 'telemetry' | 'rov' | 'structures' | 'admin' | 'cliente';
+  setActiveTab: React.Dispatch<React.SetStateAction<'telemetry' | 'rov' | 'structures' | 'admin' | 'cliente'>>;
+  isPhoneModalOpen: boolean;
+  setIsPhoneModalOpen: (open: boolean) => void;
+  phoneModalMessage: string;
+  openPhoneModal: (message: string) => void;
+  isEmailModalOpen: boolean;
+  setIsEmailModalOpen: (open: boolean) => void;
+  emailModalData: {
+    id: string;
+    nombre: string;
+    fecha: string;
+    jefeCentro: string;
+    piloto: string;
+    empresa: string;
+    puerto: string;
+    redes: string;
+    recipientEmail: string;
+    findings?: ROVFinding[];
+  } | null;
+  openEmailModal: (report: any, email: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -100,13 +429,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser]);
 
   const [currentView, setCurrentView] = useState<string>('dashboard');
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'rov' | 'structures' | 'admin'>('rov');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'rov' | 'structures' | 'admin' | 'cliente'>('rov');
 
   const [centers, setCenters] = useState<AquacultureCenter[]>(() => {
     const saved = localStorage.getItem('subvision_centers');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        
+        // Force migration reset if we have more than 3 cages in Pilpilehue
+        const pilp = parsed.find((c: any) => c.id === 'centro-pilpilehue');
+        if (pilp && pilp.cages.length > 3) {
+          localStorage.setItem('subvision_centers', JSON.stringify(aquacultureCenters));
+          return aquacultureCenters;
+        }
+
         // Clean any cached 'centro-huito' and replace with 'centro-pilpilehue'
         const cleaned = parsed.map((c: any) => {
           if (c.id === 'centro-huito') {
@@ -132,11 +469,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Filter centers list based on logged in user role and assignments
   const filteredCenters = React.useMemo(() => {
     if (!currentUser) return [];
-    if (currentUser.role === 'admin' || currentUser.email === 'admin@servirov.cl') {
+    if (
+      currentUser.role === 'admin' || 
+      currentUser.email === 'admin@servirov.cl' ||
+      currentUser.email === 'operador@servirov.cl' ||
+      currentUser.role === 'Supervisor de Operaciones Marítimas' ||
+      currentUser.role === 'Piloto ROV' ||
+      currentUser.email === 'piloto@servirov.cl' ||
+      currentUser.role === 'Cliente' ||
+      currentUser.email === 'cliente@servirov.cl'
+    ) {
       return centers;
-    }
-    if (currentUser.email === 'operador@servirov.cl') {
-      return centers.filter(c => c.id === 'centro-pilpilehue');
     }
     // Fallback for registered center
     const userCenterId = `centro-${currentUser.name.toLowerCase().replace(/\s+/g, '-')}`;
@@ -148,8 +491,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedCenter, setSelectedCenter] = useState<AquacultureCenter>(() => {
     const savedId = localStorage.getItem('subvision_selected_center_id');
     const savedCenters = localStorage.getItem('subvision_centers');
-    const currentCenters = savedCenters ? JSON.parse(savedCenters) : aquacultureCenters;
+    let currentCenters = savedCenters ? JSON.parse(savedCenters) : aquacultureCenters;
     
+    // Force migration reset if we have more than 3 cages in Pilpilehue
+    const pilp = currentCenters.find((c: any) => c.id === 'centro-pilpilehue');
+    if (pilp && pilp.cages.length > 3) {
+      currentCenters = aquacultureCenters;
+      localStorage.setItem('subvision_centers', JSON.stringify(aquacultureCenters));
+    }
+
     let cleanedCenters = currentCenters;
     try {
       cleanedCenters = currentCenters.map((c: any) => {
@@ -401,13 +751,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const loadUserReports = async (email: string) => {
     try {
-      const { data: dbReports, error } = await supabase
+      // For SERVIROV accounts (Admin, Cliente, Piloto, Operador), fetch all reports across the company so everyone sees all findings
+      const query = supabase
         .from('rov_reports')
         .select('*')
-        .eq('user_email', email)
         .order('fecha', { ascending: false });
 
-      if (!error && dbReports) {
+      const { data: dbReports, error } = await query;
+
+      if (!error && dbReports && dbReports.length > 0) {
         const mappedReports: ROVReport[] = dbReports.map(r => ({
           id: r.id || `r-${Date.now()}-${Math.random()}`,
           fecha: r.fecha || '',
@@ -421,10 +773,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           userEmail: r.user_email || ''
         }));
 
-        let merged = [...mappedReports];
-        const userDefaults = initialRovReports.filter(r => r.userEmail === email || email === 'admin@servirov.cl');
+        let merged = mappedReports.map((r: any) => {
+          const defaultMatch = initialRovReports.find(d => d.id === r.id);
+          if (defaultMatch) {
+            return { ...defaultMatch, ...r, findings: r.findings || defaultMatch.findings };
+          }
+          return r;
+        });
 
-        for (const defaultReport of userDefaults) {
+        for (const defaultReport of initialRovReports) {
           const exists = merged.some(r => r.id === defaultReport.id);
           if (!exists) {
             merged.push(defaultReport);
@@ -444,10 +801,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const userDefaults = initialRovReports.filter(r => r.userEmail === email || email === 'admin@servirov.cl');
-        const merged = [...parsed];
-        userDefaults.forEach(def => {
-          if (!merged.some(r => r.id === def.id)) {
+        const merged = parsed.map((r: any) => {
+          const defaultMatch = initialRovReports.find(d => d.id === r.id);
+          if (defaultMatch) {
+            return { ...defaultMatch, ...r, findings: r.findings || defaultMatch.findings };
+          }
+          return r;
+        });
+
+        initialRovReports.forEach(def => {
+          if (!merged.some((r: any) => r.id === def.id)) {
             merged.push(def);
           }
         });
@@ -469,7 +832,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const user = JSON.parse(savedUser);
       const saved = localStorage.getItem(`subvision_rov_reports_${user.email}`);
-      return saved ? JSON.parse(saved) : initialRovReports;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const merged = parsed.map((r: any) => {
+          const defaultMatch = initialRovReports.find(d => d.id === r.id);
+          if (defaultMatch) {
+            return { ...defaultMatch, ...r, findings: r.findings || defaultMatch.findings };
+          }
+          return r;
+        });
+        initialRovReports.forEach(def => {
+          if (!merged.some((r: any) => r.id === def.id)) {
+            merged.push(def);
+          }
+        });
+        return merged;
+      }
+      return initialRovReports;
     } catch {
       return initialRovReports;
     }
@@ -530,6 +909,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return initialUsersList;
   });
+
+  useEffect(() => {
+    setUsersList(prev => {
+      const merged = [...prev];
+      let changed = false;
+      initialUsersList.forEach(initU => {
+        if (!merged.some(u => u.email === initU.email)) {
+          merged.push(initU);
+          changed = true;
+        }
+      });
+      if (changed) {
+        localStorage.setItem('subvision_users_list', JSON.stringify(merged));
+        return merged;
+      }
+      return prev;
+    });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('subvision_centers', JSON.stringify(centers));
@@ -710,8 +1107,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [selectedCenter, waRules, currentUser, whatsAppSettings]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Check if the user is still in the active operator list
-    const isAllowed = usersList.some(u => u.email === email);
+    // Check both usersList and initialUsersList so newly added accounts (like Cliente and Piloto) work even if localStorage had cached an older usersList
+    const isAllowed = usersList.some(u => u.email === email) || initialUsersList.some(u => u.email === email);
     if (!isAllowed) {
       console.warn("Login blocked: user profile has been deleted by admin");
       return false;
@@ -723,18 +1120,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         password
       });
       if (!error && data.user) {
-        const isUserAdmin = data.user.user_metadata?.role === 'admin' || email === 'admin@servirov.cl';
+        const isUserAdmin = data.user.user_metadata?.role === 'admin' || email === 'admin@servirov.cl' || email === 'operador@servirov.cl';
+        const isUserCliente = data.user.user_metadata?.role === 'Cliente' || email === 'cliente@servirov.cl';
         const userObj = {
           email: data.user.email || email,
           password: password,
-          name: data.user.user_metadata?.nombre || 'Operador Subvision',
-          role: isUserAdmin ? 'admin' : (data.user.user_metadata?.cargo || 'Supervisor de Operaciones Marítimas'),
-          avatar: isUserAdmin ? 'AG' : 'OS',
-          company: 'SERVIROV'
+          name: data.user.user_metadata?.nombre || (isUserCliente ? 'Cliente SERVIROV' : 'Operador Subvision'),
+          role: isUserAdmin ? 'admin' : isUserCliente ? 'Cliente' : (data.user.user_metadata?.cargo || 'Supervisor de Operaciones Marítimas'),
+          avatar: isUserAdmin ? 'AG' : isUserCliente ? 'CL' : 'OS',
+          company: isUserCliente ? 'SalmonChile / MultiX' : 'SERVIROV'
         };
         setCurrentUser(userObj);
         await loadUserReports(userObj.email);
         await logActivity("Inicio de Sesión", "Ingreso a la plataforma", userObj.email);
+        if (isUserCliente) setActiveTab('cliente');
+        else if (isUserAdmin) setActiveTab('admin');
+        else setActiveTab('rov');
         setCurrentView('dashboard');
         return true;
       }
@@ -742,11 +1143,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error("Supabase login error, fallback to mock login", e);
     }
 
-    const found = usersList.find(u => u.email === email && u.password === password);
+    const found = usersList.find(u => u.email === email && u.password === password) || initialUsersList.find(u => u.email === email && u.password === password);
     if (found) {
+      if (!usersList.some(u => u.email === found.email)) {
+        const updated = [...usersList, found];
+        setUsersList(updated);
+        localStorage.setItem('subvision_users_list', JSON.stringify(updated));
+      }
       setCurrentUser(found);
       await loadUserReports(found.email);
-      await logActivity("Inicio de Sesión", "Ingreso a la plataforma (Modo Local)", found.email);
+      await logActivity("Inicio de Sesión", `Ingreso a la plataforma (${found.role})`, found.email);
+      if (found.role === 'Cliente' || found.email === 'cliente@servirov.cl') setActiveTab('cliente');
+      else if (found.role === 'admin' || found.email === 'admin@servirov.cl' || found.email === 'operador@servirov.cl') setActiveTab('admin');
+      else setActiveTab('rov');
       setCurrentView('dashboard');
       return true;
     }
@@ -836,10 +1245,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentSpeed: 1.1
       },
       cages: [
-        { id: `${centerId}-101`, name: 'Jaula 101', species: 'Salmón del Atlántico', count: 45000, avgWeightKg: 3.5, biomassTons: 157.5, netIntegrity: 98.5, mooringTensionKn: 45.2, lastCleaned: '2026-07-06', status: 'optimal' },
-        { id: `${centerId}-102`, name: 'Jaula 102', species: 'Salmón del Atlántico', count: 46200, avgWeightKg: 3.4, biomassTons: 157.08, netIntegrity: 96.0, mooringTensionKn: 48.1, lastCleaned: '2026-07-05', status: 'optimal' },
-        { id: `${centerId}-103`, name: 'Jaula 103', species: 'Salmón del Atlántico', count: 48000, avgWeightKg: 3.6, biomassTons: 172.8, netIntegrity: 94.2, mooringTensionKn: 68.3, lastCleaned: '2026-07-02', status: 'optimal' },
-        { id: `${centerId}-105`, name: 'Jaula 105', species: 'Salmón del Atlántico', count: 42000, avgWeightKg: 3.8, biomassTons: 159.6, netIntegrity: 74.2, mooringTensionKn: 145.5, lastCleaned: '2026-06-20', status: 'critical' }
+        { id: `${centerId}-101`, name: 'Módulo 101', species: 'Salmón del Atlántico', count: 45000, avgWeightKg: 3.5, biomassTons: 157.5, netIntegrity: 98.5, mooringTensionKn: 45.2, lastCleaned: '2026-07-06', status: 'optimal' },
+        { id: `${centerId}-102`, name: 'Módulo 102', species: 'Salmón del Atlántico', count: 46200, avgWeightKg: 3.4, biomassTons: 157.08, netIntegrity: 96.0, mooringTensionKn: 48.1, lastCleaned: '2026-07-05', status: 'optimal' },
+        { id: `${centerId}-103`, name: 'Módulo 103', species: 'Salmón del Atlántico', count: 48000, avgWeightKg: 3.6, biomassTons: 172.8, netIntegrity: 74.2, mooringTensionKn: 145.5, lastCleaned: '2026-06-20', status: 'critical' }
       ],
       mooringLines: [
         { id: `${centerId}-m1`, code: 'Línea A1', tensionKn: 85.4, limitKn: 180.0, angle: 45, status: 'optimal' },
@@ -957,12 +1365,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 3000);
   };
 
+  // Phone and Email Modal states
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [phoneModalMessage, setPhoneModalMessage] = useState('');
+  
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailModalData, setEmailModalData] = useState<{
+    id: string;
+    nombre: string;
+    fecha: string;
+    jefeCentro: string;
+    piloto: string;
+    empresa: string;
+    puerto: string;
+    redes: string;
+    recipientEmail: string;
+    findings?: ROVFinding[];
+  } | null>(null);
+
+  const openPhoneModal = (message: string) => {
+    setPhoneModalMessage(message);
+    setIsPhoneModalOpen(true);
+  };
+
+  const openEmailModal = (report: any, email: string) => {
+    setEmailModalData({
+      ...report,
+      recipientEmail: email
+    });
+    setIsEmailModalOpen(true);
+  };
+
   // Allow manual toggle to simulate telemetry stress in demo
   const simulateTelemetryUpdate = () => {
     setCenters(prevCenters => 
       prevCenters.map(center => {
         if (center.id === selectedCenter.id) {
-          // Increase currents, raise mooring tension, decrease oxygen, degrade cage 105 net
+          // Increase currents, raise mooring tension, decrease oxygen, degrade cage 103 net
           return {
             ...center,
             waterParams: {
@@ -971,7 +1410,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               currentSpeed: 2.8 // high current
             },
             cages: center.cages.map(cage => {
-              if (cage.id === 'h-105') {
+              if (cage.id.endsWith('103')) {
                 return {
                   ...cage,
                   netIntegrity: 62.4, // critical drop
@@ -1056,7 +1495,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       activities,
       logActivity,
       activeTab,
-      setActiveTab
+      setActiveTab,
+      isPhoneModalOpen,
+      setIsPhoneModalOpen,
+      phoneModalMessage,
+      openPhoneModal,
+      isEmailModalOpen,
+      setIsEmailModalOpen,
+      emailModalData,
+      openEmailModal
     }}>
       {children}
     </AppContext.Provider>

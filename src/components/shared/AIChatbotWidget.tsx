@@ -18,25 +18,29 @@ export const AIChatbotWidget: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // States for the custom email flow
+  const [reportFlowStep, setReportFlowStep] = useState<number>(0); // 0 = idle, 1 = awaiting email, 2 = awaiting report choice
+  const [targetEmail, setTargetEmail] = useState<string>('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize with welcome message
+  // Initialize with welcome message (highly human-like and Chilean-accented)
   useEffect(() => {
     if (messages.length === 0) {
       setMessages([
         {
           id: 'welcome',
           sender: 'bot',
-          text: `🤖 Hola, ¿cómo estás? Soy tu asistente técnico de SubVision.
+          text: `🤖 ¡Buenas tardes, colega! Soy tu copiloto técnico de SubVision.
 
-Estoy aquí para darte una mano con los informes de ROV, los anclajes y lo que necesites del centro.
+Estoy aquí para darte una mano con la telemetría, revisar el estado de las mallas, ver los tensores de fondeo o lo que sea que necesites acá en el centro.
 
-Dime si quieres saber sobre:
-• ¿Cómo están las jaulas del centro hoy?
+Dime si quieres que revisemos:
+• ¿Cómo andan las mallas del centro hoy?
 • ¿Qué reportes críticos tenemos registrados?
-• Cuéntame sobre la Jaula 105.
+• Cuéntame sobre el Módulo 103.
 
-Conversemos con confianza. Y recuerda que al pie de mis respuestas puedes enviar el informe directo a WhatsApp.`,
+¡Conversemos con confianza! Y si necesitas que despachemos un informe técnico en PDF al correo de la empresa, dímelo al tiro y lo gestionamos de una.`,
           timestamp: new Date()
         }
       ]);
@@ -47,6 +51,50 @@ Conversemos con confianza. Y recuerda que al pie de mis respuestas puedes enviar
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  const handleSelectReportForEmail = (cage: any) => {
+    setLoading(true);
+
+    // 1. Add user choice message to logs
+    const userChoiceMsg: ChatMessage = {
+      id: `msg-${Date.now()}-u-choice`,
+      sender: 'user',
+      text: `Selecciono el informe del ${cage.name.replace('Jaula', 'Módulo')}`,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userChoiceMsg]);
+
+    // 2. Simulate compiling and preparing
+    setTimeout(() => {
+      const prepMsg: ChatMessage = {
+        id: `msg-${Date.now()}-b-prep`,
+        sender: 'bot',
+        text: `¡Excelente, colega! Estoy compilando los datos de telemetría de agua, el perfil estructural y el registro de inspecciones del **${cage.name.replace('Jaula', 'Módulo')}** en un documento PDF adjunto...`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, prepMsg]);
+
+      // 3. Complete email dispatch simulation
+      setTimeout(() => {
+        const successMsg: ChatMessage = {
+          id: `msg-${Date.now()}-b-success`,
+          sender: 'bot',
+          text: `📧 **¡Correo enviado con éxito, colega!**\n\nEl informe técnico del **${cage.name.replace('Jaula', 'Módulo')}** ha sido despachado en formato PDF a la dirección **${targetEmail}** de manera segura.\n\n¡Quedó listo y enviado! ¿Revisamos algún otro módulo o línea de fondeo?`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, successMsg]);
+        setToastMessage("Correo enviado");
+
+        // Reset flow
+        setReportFlowStep(0);
+        setTargetEmail('');
+        setLoading(false);
+        
+        setTimeout(() => setToastMessage(null), 4000);
+      }, 1500);
+
+    }, 800);
+  };
 
   const handleSend = async () => {
     if (!inputValue.trim() || loading) return;
@@ -64,6 +112,47 @@ Conversemos con confianza. Y recuerda que al pie de mis respuestas puedes enviar
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
+    // --- CHECK REPORT FLOW STATE ---
+    if (reportFlowStep === 1) {
+      // User is providing the email address
+      const emailInput = userText.trim();
+      setTargetEmail(emailInput);
+      setReportFlowStep(2);
+      setLoading(false);
+
+      setTimeout(() => {
+        const botMsg: ChatMessage = {
+          id: `msg-${Date.now()}-b-email-ok`,
+          sender: 'bot',
+          text: `¡De lujo! Anoté el correo: **${emailInput}**.\n\nAhora, dime cuál de los informes de los módulos del centro te gustaría adjuntar y enviar. Por favor, selecciona una de las siguientes opciones de módulos activos:`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botMsg]);
+      }, 500);
+      return;
+    }
+
+    // --- DETECT DESIRE TO GET REPORT / EMAIL ---
+    const lowerText = userText.toLowerCase();
+    const wantsReport = lowerText.includes('informe') || lowerText.includes('reporte') || lowerText.includes('pdf') || lowerText.includes('correo') || lowerText.includes('mail') || lowerText.includes('enviar') || lowerText.includes('despachar');
+
+    if (reportFlowStep === 0 && wantsReport) {
+      setReportFlowStep(1);
+      setLoading(false);
+
+      setTimeout(() => {
+        const botMsg: ChatMessage = {
+          id: `msg-${Date.now()}-b-ask-email`,
+          sender: 'bot',
+          text: `¡Por supuesto, colega! Te preparo el despacho del PDF de inmediato. Dime, ¿a qué dirección de correo electrónico quieres que envíe el reporte técnico?`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botMsg]);
+      }, 500);
+      return;
+    }
+
+    // --- DEFAULT BOT CHAT LOGIC ---
     try {
       // Gather active reports text context
       const centerReports = rovReports.filter(r => r.centroId === selectedCenter.id);
@@ -72,7 +161,7 @@ Conversemos con confianza. Y recuerda que al pie de mis respuestas puedes enviar
         : 'No hay informes registrados en este centro de cultivo.';
 
       // Gather cages integrity status
-      const cagesContext = selectedCenter.cages.map(c => `Jaula: ${c.name}, Especie: ${c.species}, Densidad: ${c.count} peces, Integridad Malla: ${c.netIntegrity}%, Estado General: ${c.status.toUpperCase()}`).join('\n');
+      const cagesContext = selectedCenter.cages.slice(0, 3).map(c => `Módulo: ${c.name.replace('Jaula', 'Módulo')}, Especie: ${c.species}, Densidad: ${c.count} peces, Integridad Malla: ${c.netIntegrity}%, Estado General: ${c.status.toUpperCase()}`).join('\n');
 
       // Mooring lines status
       const mooringContext = selectedCenter.mooringLines.map(m => `Fondeo: ${m.code}, Tensión: ${m.tensionKn} kN (Límite: ${m.limitKn} kN), Estado: ${m.status.toUpperCase()}`).join('\n');
@@ -80,8 +169,8 @@ Conversemos con confianza. Y recuerda que al pie de mis respuestas puedes enviar
       // Water params
       const waterContext = `Temperatura: ${selectedCenter.waterParams.temperature}°C, Oxígeno Disuelto: ${selectedCenter.waterParams.dissolvedOxygen} mg/L, pH: ${selectedCenter.waterParams.ph}, Velocidad Corriente: ${selectedCenter.waterParams.currentSpeed} nudos.`;
 
-      // Construct system prompt with fluid, human-like instructions
-      const systemPrompt = `Eres el Asistente Inteligente de SUBVISION (plataforma de SERVIROV). Tu misión es ayudar al operador a evaluar informes técnicos, telemetrías y la seguridad de las jaulas.
+      // Construct system prompt with fluid, human-like instructions (Chilean accent)
+      const systemPrompt = `Eres el Asistente Inteligente de SUBVISION (plataforma de SERVIROV). Tu misión es ayudar al operador a evaluar informes técnicos, telemetrías y la seguridad de los módulos.
 
 DATOS DEL CENTRO ACTIVO:
 - Centro: ${selectedCenter.name}
@@ -91,7 +180,7 @@ DATOS DEL CENTRO ACTIVO:
 TELEMETRÍA DE AGUA EN VIVO:
 ${waterContext}
 
-ESTADO DE INTEGRIDAD DE JAULAS:
+ESTADO DE INTEGRIDAD DE MÓDULOS (LIMITADO A 3 MÓDULOS):
 ${cagesContext}
 
 LÍNEAS DE ANCLAJE Y FONDEOS:
@@ -101,10 +190,9 @@ HISTORIAL DE INFORMES DE ROV EN ESTE CENTRO:
 ${reportsContext}
 
 DIRECTRICES DE PERSONALIDAD Y TONO (MUY IMPORTANTE):
-1. No seas robótico, rígido ni demasiado estructurado. Habla como un colega supervisor experto en acuicultura: de manera fluida, natural, empática y cercana.
-2. Evita listados de datos fríos sin explicación. Analiza la información, explica qué significan los números (ej. si una integridad de 74.2% es peligrosa, explícalo de forma lógica y cercana) y da recomendaciones prácticas.
-3. Si el usuario pide enviar un reporte a WhatsApp o simularlo, indícale qué reporte estás enviando de forma amable ("Dale, ahí te preparo el mensaje para WhatsApp...") e invítalo a hacer clic en el botón verde "Enviar a WhatsApp" que tiene al final de tu mensaje.
-4. Usa un tono cercano y amigable de apoyo técnico.`;
+1. ¡No seas robótico, frío ni demasiado formal! Háblale al operador como un colega supervisor chileno del sur del país (Puerto Montt, Chiloé) experto en acuicultura: de manera fluida, natural, empática y cercana. Usa términos profesionales del sector junto con modismos amigables como "colega", "al tiro", "de lujo", "chiquillos", "hacer el aguante".
+2. Evita listados de datos secos. Explica qué significan los números (ej. si la integridad de la malla del Módulo 103 está en 74.2%, explícale con tono de advertencia que eso es crítico y requiere parche o costura de inmediato para evitar escapes).
+3. Si el usuario pide enviar un informe o un PDF, indícale amablemente que le puedes despachar el PDF al correo de inmediato y dile algo así como "Escríbeme 'enviar informe' y lo gestionamos al tiro".`;
 
       // Call API (DeepSeek model)
       const reply = await queryGroq(systemPrompt, userText);
@@ -120,7 +208,7 @@ DIRECTRICES DE PERSONALIDAD Y TONO (MUY IMPORTANTE):
       const errorMsg: ChatMessage = {
         id: `msg-${Date.now()}-err`,
         sender: 'bot',
-        text: `Disculpa, tuve un pequeño percance al procesar los datos: ${err.message || 'No pude conectarme al servidor de IA.'}. ¿Podríamos intentar nuevamente?`,
+        text: `Disculpa, colega, tuve un pequeño percance al procesar los datos de telemetría: ${err.message || 'No pude conectarme al servidor de IA.'}. ¿Probamos nuevamente?`,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -230,7 +318,7 @@ DIRECTRICES DE PERSONALIDAD Y TONO (MUY IMPORTANTE):
                 <div className="whitespace-pre-line">{msg.text}</div>
 
                 {/* Integrated WhatsApp Share Action Footer for Bot Messages */}
-                {msg.sender === 'bot' && msg.id !== 'welcome' && (
+                {msg.sender === 'bot' && msg.id !== 'welcome' && msg.id.indexOf('-b-success') < 0 && msg.id.indexOf('-b-ask-email') < 0 && msg.id.indexOf('-b-email-ok') < 0 && (
                   <div className="mt-3.5 pt-2.5 border-t border-slate-200/60 flex justify-end">
                     <button
                       onClick={() => handleShareToWhatsApp(msg.text)}
@@ -245,6 +333,33 @@ DIRECTRICES DE PERSONALIDAD Y TONO (MUY IMPORTANTE):
             </div>
           ))}
 
+          {/* Interactive Report Selector in the Chat Logs */}
+          {reportFlowStep === 2 && (
+            <div className="flex flex-col max-w-[90%] mr-auto items-start animate-fade-in">
+              <div className="p-4 bg-slate-50 border border-cyan-100 rounded-2xl rounded-tl-none shadow-sm space-y-3">
+                <span className="text-[9px] font-bold text-cyan-700 uppercase tracking-widest block">Seleccionar Módulo Activo:</span>
+                <div className="flex flex-col gap-2">
+                  {selectedCenter.cages.slice(0, 3).map(cage => (
+                    <button
+                      key={cage.id}
+                      onClick={() => handleSelectReportForEmail(cage)}
+                      className="px-3.5 py-2.5 bg-white hover:bg-cyan-50 border border-slate-200 hover:border-cyan-300 text-slate-700 hover:text-cyan-800 text-[11px] font-bold rounded-xl transition-all cursor-pointer text-left flex items-center justify-between shadow-xs min-w-[200px]"
+                    >
+                      <span>{cage.name.replace('Jaula', 'Módulo')}</span>
+                      <span className={`w-2 h-2 rounded-full ${
+                        cage.status === 'optimal' 
+                          ? 'bg-emerald-400 shadow-[0_0_6px_#10b981]' 
+                          : cage.status === 'warning' 
+                          ? 'bg-amber-400 shadow-[0_0_6px_#f59e0b]' 
+                          : 'bg-red-500 shadow-[0_0_6px_#ef4444]'
+                      }`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {loading && (
             <div className="flex items-center gap-2 text-cyan-600 font-mono text-[9.5px] px-2 py-1.5 bg-cyan-50 border border-cyan-100/50 rounded-lg w-max animate-pulse font-bold">
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -257,7 +372,7 @@ DIRECTRICES DE PERSONALIDAD Y TONO (MUY IMPORTANTE):
 
         {/* Minimalist Floating Banner Alerts */}
         {toastMessage && (
-          <div className="mx-5 mb-3 bg-emerald-50 border border-emerald-200 text-emerald-800 py-2 px-4 rounded-xl flex items-center gap-2 text-[9px] font-mono shadow-sm animate-fade-in z-10 font-bold">
+          <div className="mx-5 mb-3 bg-emerald-50 border border-emerald-200 text-emerald-800 py-2 px-4 rounded-xl flex items-center gap-2 text-[9.5px] font-mono shadow-sm animate-fade-in z-10 font-bold">
             <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span>{toastMessage}</span>
           </div>
@@ -273,7 +388,11 @@ DIRECTRICES DE PERSONALIDAD Y TONO (MUY IMPORTANTE):
               onKeyDown={e => {
                 if (e.key === 'Enter') handleSend();
               }}
-              placeholder="Pregunta sobre mallas, fondeos o informes..."
+              placeholder={
+                reportFlowStep === 1 
+                  ? "Escribe el correo destinatario..." 
+                  : "Pregunta sobre mallas, fondeos o informes..."
+              }
               className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-cyan-500/50 text-[11px] transition-all"
               disabled={loading}
             />

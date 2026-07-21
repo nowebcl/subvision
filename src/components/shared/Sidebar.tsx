@@ -3,12 +3,12 @@ import { useApp } from '../../context/AppContext';
 import { 
   LayoutDashboard, 
   Anchor, 
-  ClipboardCheck, 
   LogOut,
   Smartphone,
-  Video,
   MessageSquareCode,
-  Shield
+  Shield,
+  AlertTriangle,
+  Building2
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -24,16 +24,25 @@ export const Sidebar: React.FC = () => {
     setActiveTab
   } = useApp();
 
+  const isClient = currentUser?.role === 'Cliente' || currentUser?.email === 'cliente@servirov.cl';
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === 'admin@servirov.cl');
+
   const menuItems = [
-    { id: 'dashboard', name: 'Informes', icon: LayoutDashboard, badge: activeAlerts.filter(a => !a.acknowledged).length },
-    { id: 'installations', name: 'Instalaciones', icon: Anchor, badge: 0 },
-    { id: 'video-ai', name: 'Video en Tiempo Real', icon: Video, badge: 0 },
-    { id: 'checklist', name: 'Checklist Inspección', icon: ClipboardCheck, badge: 0 },
-    { id: 'multimodal', name: 'AI Multimodal', icon: MessageSquareCode, badge: 0 },
-    { id: 'whatsapp-sim', name: 'Simulador WhatsApp Live', icon: Smartphone, badge: 0 },
+    { id: 'dashboard', name: isClient ? 'Monitoreo Informes' : 'Informes ROV', icon: LayoutDashboard, badge: activeAlerts.filter(a => !a.acknowledged).length },
   ];
 
-  if (currentUser && (currentUser.role === 'admin' || currentUser.email === 'admin@servirov.cl')) {
+  if (isClient || isAdmin) {
+    menuItems.push({ id: 'client-portal', name: 'Pilotos y Centros', icon: Building2, badge: 0 });
+    menuItems.push({ id: 'installations', name: 'Módulos', icon: Anchor, badge: 0 });
+  }
+
+  menuItems.push(
+    { id: 'findings', name: 'Hallazgos', icon: AlertTriangle, badge: 0 },
+    { id: 'multimodal', name: 'Agente IA Servirov', icon: MessageSquareCode, badge: 0 },
+    { id: 'whatsapp-sim', name: 'Simulador WhatsApp Live', icon: Smartphone, badge: 0 }
+  );
+
+  if (isAdmin) {
     menuItems.push({ id: 'admin', name: 'Administración', icon: Shield, badge: 0 });
   }
 
@@ -59,9 +68,11 @@ export const Sidebar: React.FC = () => {
             const Icon = item.icon;
             const isActive = item.id === 'admin'
               ? (currentView === 'dashboard' && activeTab === 'admin')
-              : item.id === 'dashboard'
-                ? (currentView === 'dashboard' && activeTab !== 'admin')
-                : currentView === item.id;
+              : item.id === 'client-portal'
+                ? (currentView === 'dashboard' && activeTab === 'cliente')
+                : item.id === 'dashboard'
+                  ? (currentView === 'dashboard' && activeTab !== 'admin' && activeTab !== 'cliente')
+                  : currentView === item.id;
             
             return (
               <button
@@ -70,6 +81,9 @@ export const Sidebar: React.FC = () => {
                   if (item.id === 'admin') {
                     setCurrentView('dashboard');
                     setActiveTab('admin');
+                  } else if (item.id === 'client-portal') {
+                    setCurrentView('dashboard');
+                    setActiveTab('cliente');
                   } else if (item.id === 'dashboard') {
                     setCurrentView('dashboard');
                     setActiveTab('rov');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { BrainCircuit, Send, Sparkles, AlertCircle, FileText, Image, Search, ChevronRight, User } from 'lucide-react';
+import { BrainCircuit, Send, FileText, Image, Search, User } from 'lucide-react';
 import { queryGroq } from '../lib/groq';
 
 interface ChatMessage {
@@ -29,7 +29,7 @@ export const MultimodalAIView: React.FC = () => {
       {
         id: 'msg-1',
         sender: 'ai' as const,
-        text: `Hola ${userName}. Soy el asistente de Inteligencia Artificial Multimodal de SubVision. Puedo asistirte en la interpretación de ecogramas, reportes de fondeo, análisis acústicos y detección de roturas de mallas. ¿Qué deseas analizar hoy?`,
+        text: `Hola ${userName}. Soy el Agente IA Servirov. Puedo asistirte en la interpretación de ecogramas, reportes de fondeo, análisis acústicos y detección de roturas de mallas. ¿Qué deseas analizar hoy? ¿Quieres enviar un informe?`,
         timestamp: '15:20'
       }
     ];
@@ -47,24 +47,17 @@ export const MultimodalAIView: React.FC = () => {
       {
         id: 'msg-1',
         sender: 'ai' as const,
-        text: `Hola ${userName}. Soy el asistente de Inteligencia Artificial Multimodal de SubVision. Puedo asistirte en la interpretación de ecogramas, reportes de fondeo, análisis acústicos y detección de roturas de mallas. ¿Qué deseas analizar hoy?`,
+        text: `Hola ${userName}. Soy el Agente IA Servirov. Puedo asistirte en la interpretación de ecogramas, reportes de fondeo, análisis acústicos y detección de roturas de mallas. ¿Qué deseas analizar hoy? ¿Quieres enviar un informe?`,
         timestamp: new Date().toLocaleTimeString().substring(0, 5)
       }
     ];
     setChatHistory(initialMsg);
   };
 
-  const samplePrompts = [
-    { text: '¿Cuál es el estado de riesgo en los anclajes del Centro?', type: 'general' },
-    { text: 'Analizar ecograma de Jaula 105', type: 'sonar', file: { name: 'ecograma_jaula105_sonar.png', type: 'sonar' as const } },
-    { text: 'Inspeccionar anomalía detectada por ROV en Jaula 103', type: 'image', file: { name: 'rov_photo_mesh_103.jpg', type: 'image' as const } },
-    { text: 'Estudiar tendencias de Oxígeno Disuelto', type: 'general' }
-  ];
-
   const groqModel = 'llama-3.1-8b-instant';
 
   const queryGemini = async (userText: string, fileAttachment: typeof selectedAttachment): Promise<string> => {
-    const systemPrompt = `Eres el Asistente de Inteligencia Artificial Multimodal de SUBVISION, una plataforma industrial desarrollada por la empresa SERVIROV para el monitoreo de redes de pesca y centros de cultivo.
+    const systemPrompt = `Eres el Agente IA Servirov de SUBVISION, una plataforma industrial desarrollada por la empresa SERVIROV para el monitoreo de redes de pesca y centros de cultivo.
 Tu función es ayudar a los operadores técnicos a analizar la telemetría, el estado de las mallas, las líneas de fondeo y los parámetros oceanográficos del centro seleccionado.
 
 Aquí tienes el estado actual del Centro de Cultivo en tiempo real:
@@ -79,8 +72,8 @@ Parámetros Oceanográficos:
 - Salinidad: ${selectedCenter.waterParams.salinity} psu
 - Velocidad de Corriente: ${selectedCenter.waterParams.currentSpeed} nudos
 
-Jaulas e Integridad de Redes (Mallas Peceras/Loberas):
-${selectedCenter.cages.map(c => `* ${c.name}: Especie = ${c.species}, Cantidad de Peces = ${c.count}, Peso Promedio = ${c.avgWeightKg} kg, Biomasa = ${c.biomassTons} ton, Integridad de Malla = ${c.netIntegrity}%, Tensión de Fondeo = ${c.mooringTensionKn} kN, Estado de Alerta = ${c.status}`).join('\n')}
+Módulos e Integridad de Redes (Mallas Peceras/Loberas):
+${selectedCenter.cages.map(c => `* ${c.name.replace('Jaula', 'Módulo')}: Especie = ${c.species}, Cantidad de Peces = ${c.count}, Peso Promedio = ${c.avgWeightKg} kg, Biomasa = ${c.biomassTons} ton, Integridad de Malla = ${c.netIntegrity}%, Tensión de Fondeo = ${c.mooringTensionKn} kN, Estado de Alerta = ${c.status}`).join('\n')}
 
 Líneas de Fondeo y Anclajes:
 ${selectedCenter.mooringLines.map(l => `* ${l.code}: Tensión = ${l.tensionKn} kN (Límite Máximo = ${l.limitKn} kN), Estado = ${l.status}, Ángulo = ${l.angle}°`).join('\n')}
@@ -90,7 +83,8 @@ Reglas operativas para tus respuestas:
 2. Utiliza formato markdown para estructurar tus respuestas (títulos ###, listas con *, negritas).
 3. Si el usuario te pregunta sobre un centro o sobre datos específicos (ej. "¿Cómo está el oxígeno?", "¿Hay alguna jaula crítica?"), responde con base EN LA TELEMETRÍA REAL listada arriba.
 4. Si el usuario adjunta un archivo (ej. ecograma o imagen submarina), analiza semánticamente el archivo mencionado y genera un diagnóstico realista (por ejemplo, relacionando roturas en la malla o biofouling).
-5. Mantén un tono industrial-técnico y no comercial.`;
+5. Mantén un tono industrial-técnico y no comercial.
+6. Al finalizar cada una de tus respuestas o análisis técnicos, debes preguntarle siempre al usuario al final del texto: "¿Quieres enviar un informe?".`;
 
     let finalPrompt = userText;
     if (fileAttachment) {
@@ -134,10 +128,6 @@ Reglas operativas para tus respuestas:
     setLoading(false);
   };
 
-  const handlePromptClick = (promptText: string, file?: typeof selectedAttachment) => {
-    handleSend(promptText, file);
-  };
-
   return (
     <div className="flex-1 flex bg-slate-50 min-h-[calc(100vh-73px)] animate-fade-in">
       
@@ -149,7 +139,7 @@ Reglas operativas para tus respuestas:
           <div>
             <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
               <BrainCircuit className="w-6 h-6 text-cyan-600 animate-pulse" />
-              Asistente de AI Multimodal
+              Agente IA Servirov
             </h1>
             <p className="text-slate-500 text-xs mt-0.5">
               Analice imágenes submarinas, telemetría o archivos acústicos para diagnosticar fallas estructurales.
@@ -293,46 +283,6 @@ Reglas operativas para tus respuestas:
           </div>
         </div>
 
-      </div>
-
-      {/* Right Sidebar: Quick promts template */}
-      <div className="w-80 bg-white border-l border-slate-100 p-6 flex flex-col justify-between shrink-0 shadow-[-2px_0_10px_rgba(241,245,249,0.2)]">
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-cyan-500" />
-              Plantillas de Consulta
-            </h3>
-            <p className="text-slate-400 text-[10px] leading-relaxed">
-              Seleccione un prompt configurado para simular diagnósticos avanzados de sensores acústicos y de tracción.
-            </p>
-          </div>
-
-          <div className="space-y-3.5">
-            {samplePrompts.map((p, idx) => (
-              <button
-                key={idx}
-                onClick={() => handlePromptClick(p.text, p.file)}
-                className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-cyan-300 hover:bg-cyan-50/10 transition-all text-xs font-semibold text-slate-700 flex justify-between items-start group"
-              >
-                <div className="space-y-1">
-                  <span>{p.text}</span>
-                  {p.file && (
-                    <span className="block text-[8px] font-mono text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded w-max mt-1">
-                      Auto-Carga: {p.file.name}
-                    </span>
-                  )}
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 group-hover:text-cyan-600 transition-all shrink-0 mt-0.5" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="p-4 bg-slate-50 rounded-xl text-[10px] text-slate-400 font-mono flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-cyan-600 shrink-0 mt-0.5" />
-          <span>El análisis de IA es un modelo predictivo entrenado sobre fallas de fondeo estructural de Servirov. Confirme los desgarras críticos en terreno.</span>
-        </div>
       </div>
 
     </div>

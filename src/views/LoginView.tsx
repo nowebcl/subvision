@@ -69,11 +69,25 @@ export const LoginView: React.FC = () => {
     }
   };
 
-  const handleQuickFill = () => {
+  const handleQuickFillAdmin = () => {
     setEmail('operador@servirov.cl');
     setPassword('ClaveSeguraSubvision123!');
     setError(null);
   };
+
+  const handleQuickFillPiloto = () => {
+    setEmail('piloto@servirov.cl');
+    setPassword('ClavePiloto123!');
+    setError(null);
+  };
+
+  const handleQuickFillCliente = () => {
+    setEmail('cliente@servirov.cl');
+    setPassword('ClaveCliente123!');
+    setError(null);
+  };
+
+  const handleQuickFill = handleQuickFillAdmin;
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-slate-950 overflow-y-auto text-slate-200 py-10 px-4">
@@ -343,15 +357,40 @@ export const LoginView: React.FC = () => {
                 <span>Entrar con Google</span>
               </button>
 
-              {/* Quick Credential Restore Link */}
-              <div className="mt-5 text-center border-t border-slate-800/80 pt-4">
-                <button
-                  type="button"
-                  onClick={handleQuickFill}
-                  className="text-[10px] text-cyan-500/80 hover:text-cyan-400 transition-colors uppercase tracking-wider"
-                >
-                  Autocompletar Cuenta de Prueba
-                </button>
+              {/* Quick Profile Credential Fillers */}
+              <div className="mt-5 border-t border-slate-800/80 pt-4 space-y-2">
+                <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider text-center mb-2">Autocompletar Acceso Directo por Perfil:</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleQuickFillAdmin}
+                    className="p-2 bg-slate-900/80 hover:bg-cyan-950/60 border border-cyan-500/30 rounded-xl text-center transition-all group flex flex-col items-center justify-center gap-1"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                    <span className="text-[10px] font-bold text-cyan-300">Admin</span>
+                    <span className="text-[8px] text-slate-400">SERVIROV</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleQuickFillPiloto}
+                    className="p-2 bg-slate-900/80 hover:bg-emerald-950/60 border border-emerald-500/30 rounded-xl text-center transition-all group flex flex-col items-center justify-center gap-1"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span className="text-[10px] font-bold text-emerald-300">Piloto</span>
+                    <span className="text-[8px] text-slate-400">ROV Campo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleQuickFillCliente}
+                    className="p-2 bg-slate-900/80 hover:bg-purple-950/60 border border-purple-500/30 rounded-xl text-center transition-all group flex flex-col items-center justify-center gap-1"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                    <span className="text-[10px] font-bold text-purple-300">Cliente</span>
+                    <span className="text-[8px] text-slate-400">Monitoreo</span>
+                  </button>
+                </div>
               </div>
             </>
           )}

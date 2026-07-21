@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visor 3D de Instalaciones - SubVision</title>
+  <title>Visor 3D de Módulos - SubVision</title>
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   
@@ -195,32 +195,47 @@
       </div>
 
       <!-- Media Files / Attachments Gallery -->
-      <div class="space-y-2.5">
-        <span class="text-[8px] font-mono text-cyan-400 uppercase tracking-widest block font-bold">Archivos y Multimedia Registrados</span>
-        
-        <div class="grid grid-cols-2 gap-3">
-          <!-- Photo Thumbnail -->
-          <div class="relative group rounded-xl overflow-hidden border border-cyan-500/20 bg-slate-950 aspect-video shadow-md">
-            <img src="/net_inspection.png" alt="Captura Subacuática" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer" onclick="openFullscreenMedia('/net_inspection.png', 'image')" />
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
-            <span class="absolute bottom-2 left-2 bg-slate-950/85 text-[7px] text-white px-1.5 py-0.5 rounded font-mono border border-white/5">CAPTURA_ROV.PNG</span>
-          </div>
+      <div class="space-y-2" id="drawer-media-section">
+        <!-- Will be populated dynamically in JS to match specific report pictures -->
+      </div>
 
-          <!-- Video Thumbnail -->
-          <div class="relative group rounded-xl overflow-hidden border border-cyan-500/20 bg-slate-950 aspect-video shadow-md flex items-center justify-center cursor-pointer" onclick="openFullscreenMedia('https://vjs.zencdn.net/v/oceans.mp4', 'video')">
-            <video src="https://vjs.zencdn.net/v/oceans.mp4" muted loop class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-            <div class="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors duration-300" />
-            <!-- Play icon overlay -->
-            <div class="relative z-10 w-9 h-9 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110">
-              <svg className="w-4 h-4 fill-current ml-0.5" viewBox="0 0 24 24" width="16" height="16">
-                <path d="M8 5v14l11-7z" fill="currentColor"/>
-              </svg>
-            </div>
-            <span class="absolute bottom-2 left-2 bg-slate-950/85 text-[7px] text-white px-1.5 py-0.5 rounded font-mono border border-white/5 z-10">VIDEO_INSP.MP4</span>
+      <!-- Cronología de Inspecciones — Calendar Section -->
+      <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:18px;">
+        <p style="font-size:9px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 2px 0;">Cronología de Inspecciones</p>
+        <p id="findings-total-count" style="font-size:14px;font-weight:700;color:#fff;margin:0 0 8px 0;">— hallazgos</p>
+
+        <!-- Registrar Hallazgo Button -->
+        <button onclick="openAddFindingModal()" style="width:100%;margin-bottom:12px;padding:7px 10px;background:rgba(6,182,212,0.08);color:#22d3ee;font-weight:700;font-size:10px;border-radius:8px;border:1px dashed rgba(6,182,212,0.35);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;font-family:sans-serif;" onmouseenter="this.style.background='rgba(6,182,212,0.18)'" onmouseleave="this.style.background='rgba(6,182,212,0.08)'">
+          <span>➕ Registrar Hallazgo en Módulo</span>
+        </button>
+
+        <!-- Mini Calendar Widget -->
+        <div id="mini-calendar-widget" style="background:rgba(15,23,42,0.45);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:12px;margin-bottom:14px;">
+          <!-- Calendar Header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <button onclick="changeCalendarMonth(-1)" style="background:transparent;border:none;color:#64748b;cursor:pointer;padding:2px 6px;font-size:12px;font-weight:bold;transition:color 0.15s;" onmouseenter="this.style.color='#22d3ee'" onmouseleave="this.style.color='#64748b'">&lt;</button>
+            <span id="calendar-month-year" style="font-size:11px;font-weight:700;color:#f1f5f9;font-family:sans-serif;text-transform:capitalize;">Julio 2026</span>
+            <button onclick="changeCalendarMonth(1)" style="background:transparent;border:none;color:#64748b;cursor:pointer;padding:2px 6px;font-size:12px;font-weight:bold;transition:color 0.15s;" onmouseenter="this.style.color='#22d3ee'" onmouseleave="this.style.color='#64748b'">&gt;</button>
+          </div>
+          
+          <!-- Days of Week Header -->
+          <div style="display:grid;grid-template-columns:repeat(7, 1fr);text-align:center;font-size:8px;font-weight:800;color:#475569;margin-bottom:6px;font-family:monospace;letter-spacing:0.1em;">
+            <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+          </div>
+          
+          <!-- Days Grid -->
+          <div id="calendar-days-grid" style="display:grid;grid-template-columns:repeat(7, 1fr);gap:4px;text-align:center;"></div>
+          
+          <!-- Bottom actions -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);font-family:sans-serif;">
+            <button onclick="clearCalendarFilter()" style="background:transparent;border:none;color:#22d3ee;font-size:9px;font-weight:700;cursor:pointer;padding:0;transition:color 0.15s;" onmouseenter="this.style.color='#67e8f9'" onmouseleave="this.style.color='#22d3ee'">Mostrar todos</button>
+            <span id="calendar-filter-status" style="font-size:9px;color:#64748b;font-family:monospace;">Sin filtro</span>
           </div>
         </div>
+
+        <!-- Findings list — full width rows -->
+        <div id="other-findings-list" style="display:flex;flex-direction:column;gap:2px;max-height:220px;overflow-y:auto;"></div>
       </div>
-      <!-- Info and Media only -->
 
     </div>
 
@@ -228,6 +243,7 @@
       SUBVISION 3D VISUALIZER ENGINE
     </div>
   </div>
+
 
   <!-- Fullscreen Media Modal Viewer -->
   <div id="media-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
@@ -237,14 +253,45 @@
     </div>
   </div>
 
+  <!-- Visor WhatsApp Simulator Modal -->
+  <div id="visor-wa-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="relative w-[360px] h-[580px] bg-[#0b141a] rounded-[24px] border border-white/10 flex flex-col overflow-hidden shadow-2xl">
+      <!-- Phone Header -->
+      <div class="bg-[#075e54] p-3.5 text-white flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-[#128c7e] flex items-center justify-center font-bold text-xs">SV</div>
+          <div>
+            <p class="margin-0 text-xs font-bold leading-none" style="margin:0;">SubVision Alertas</p>
+            <p class="margin-0 text-[9px] text-[#d1f4e6] leading-none mt-1" style="margin:5px 0 0 0;">En línea</p>
+          </div>
+        </div>
+        <button onclick="closeVisorWaModal()" class="bg-transparent border-none text-white text-base cursor-pointer font-bold px-2 py-1 hover:opacity-80">✕</button>
+      </div>
+      <!-- Messages area -->
+      <div id="visor-wa-messages" class="flex-1 p-4 overflow-y-auto flex flex-col gap-2 bg-[#0b141a]/95 bg-cover" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');">
+        <!-- Message will be dynamically written -->
+      </div>
+      <!-- Footer -->
+      <div class="bg-[#1f2c34] p-2.5 flex items-center gap-2.5 shrink-0">
+        <input readonly type="text" value="Mensaje enviado automáticamente" class="flex-1 bg-[#2a3942] border-none rounded-full px-3.5 py-2 text-[#8696a0] text-[10px] outline-none" />
+      </div>
+    </div>
+  </div>
+
   <!-- Three.js Application Logic -->
   <script>
     // Global parameters
     let scene, camera, renderer, controls;
     let cageGroup;
-    let markers = []; // Array of { id: string, pos: Vector3, el: HTMLElement }
+    let threeMarkers = []; // Array of 3D marker components
     let allReports = [];
     let activeReportId = null;
+    let calendarViewDate = new Date(2026, 6, 1);
+
+    // Raycasting parameters for interactive 3D markers
+    let raycaster, mouse;
+    let hoveredMarker = null;
+    let pointerDownPos = { x: 0, y: 0 };
 
     // Supabase config
     const supabaseUrl = 'https://oyovjfqrvlqklmerogmz.supabase.co';
@@ -271,56 +318,358 @@
 
     // Default static mock data for fallback
     const initialRovReportsFallback = [
-      { id: 'r-pilpilehue-1', fecha: '2026-07-14', nombre: 'INSPECCIÓN DE REDES JAULA 105', jefeCentro: 'Andrés Mansilla', piloto: 'Christian Oyarzún', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED PECERA (Falla de integridad con desgarro vertical en cuadrante oeste)', centroId: 'centro-pilpilehue' },
-      { id: 'r-pilpilehue-2', fecha: '2026-07-13', nombre: 'AUDITORÍA DE VECTORES DE ANCLAJE JAULA 108', jefeCentro: 'Andrés Mansilla', piloto: 'Felipe Soto', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'LÍNEA DE FONDEO B2 (Tensión de 148.9 kN registrada)', centroId: 'centro-pilpilehue' },
-      { id: 'r-quellon-1', fecha: '2026-07-14', nombre: 'REVISIÓN DE BIOFOULING JAULA 110', jefeCentro: 'Carlos Peña', piloto: 'Cristian Barcena Córdova', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA (Acumulación moderada de algas en cuadrante norte)', centroId: 'centro-quellon' },
-      { id: 'r-quellon-2', fecha: '2026-07-12', nombre: 'MONITOREO DE BIOMASA JAULA 101', jefeCentro: 'Carlos Peña', piloto: 'Carlos Varas', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED PECERA; RED LOBERA (Sin observaciones, comportamiento normal)', centroId: 'centro-quellon' },
-      { id: 'r-apiao-1', fecha: '2026-07-14', nombre: 'INSPECCIÓN DE PARCHES JAULA 107', jefeCentro: 'Juan Silva', piloto: 'Hugo Díaz', empresa: 'SERVIROV', puerto: 'Cerrado', redes: 'RED PECERA (Desgarro menor de 0.5m en cuadrante este)', centroId: 'centro-apiao' },
-      { id: 'r-apiao-2', fecha: '2026-07-11', nombre: 'LIMPIEZA DE MALLA JAULA 112', jefeCentro: 'Juan Silva', piloto: 'Daniel Toro', empresa: 'SERVIROV', puerto: 'Abierto', redes: 'RED LOBERA (Retiro de suciedad y adherencias completo)', centroId: 'centro-apiao' }
+      {
+        id: 'r-pilpilehue-today',
+        fecha: '2026-07-21',
+        nombre: 'ROTURA CRÍTICA DE MALLA JAULA 103',
+        jefeCentro: 'Andrés Mansilla',
+        piloto: 'Cristian Barcena Córdova (Piloto ROV)',
+        empresa: 'SERVIROV',
+        puerto: 'Cerrado',
+        redes: 'RED PECERA (Rotura crítica de malla con desgarro vertical de 1.2 metros en fondo)',
+        centroId: 'centro-pilpilehue',
+        userEmail: 'operador@servirov.cl',
+        findings: [
+          {
+            id: 'f-today-1',
+            jaula: '103',
+            seccion: 'Fondo',
+            clasificacion: 'Rotura de Red',
+            observacion: 'Se detecta rotura de malla pecera jaula 103 con desgarro vertical de 1.2 metros en fondo.',
+            fotoUrl: '/report_pecera409.jpg',
+            profundidad: '20 metros'
+          },
+          {
+            id: 'f-today-2',
+            jaula: '105',
+            seccion: 'Lateral',
+            clasificacion: 'Biofouling pesado',
+            observacion: 'Nivel de adherencia de algas moderado en cuadrante norte del paño de jaula 105.',
+            fotoUrl: '/report_ins311.png',
+            profundidad: '12 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-pilpilehue-1',
+        fecha: '2026-07-20',
+        nombre: 'AUDITORÍA DE VECTORES DE ANCLAJE B2',
+        jefeCentro: 'Andrés Mansilla',
+        piloto: 'Cristian Barcena Córdova (Piloto ROV)',
+        empresa: 'SERVIROV',
+        puerto: 'Cerrado',
+        redes: 'LÍNEA DE ANCLAJE B2 (Tensión inusual de 148.9 kN registrada durante corriente fuerte)',
+        centroId: 'centro-pilpilehue',
+        userEmail: 'operador@servirov.cl',
+        findings: [
+          {
+            id: 'f-1-1',
+            jaula: '108',
+            seccion: 'Fondo',
+            clasificacion: 'Sobretensión Fondeo',
+            observacion: 'Tensión máxima de 148.9 kN registrada durante oscilación de corriente en anclaje B2.',
+            fotoUrl: '/report_ins311.png',
+            profundidad: '24 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-pilpilehue-2',
+        fecha: '2026-07-19',
+        nombre: 'INSPECCIÓN DE UNIÓN DE PAÑO JAULA 101-102',
+        jefeCentro: 'Andrés Mansilla',
+        piloto: 'Cristian Barcena Córdova (Piloto ROV)',
+        empresa: 'SERVIROV',
+        puerto: 'Abierto',
+        redes: 'RED PECERA (Inspección rutinaria de paños en módulo 101 y costuras de unión inferior)',
+        centroId: 'centro-pilpilehue',
+        userEmail: 'operador@servirov.cl',
+        findings: [
+          {
+            id: 'f-2-1',
+            jaula: '101',
+            seccion: 'Fondo',
+            clasificacion: 'Sin Hallazgos',
+            observacion: 'Inspección de cabo de unión inferior conforme sin desgarros.',
+            fotoUrl: '/report_ins301.png',
+            profundidad: '15 metros'
+          },
+          {
+            id: 'f-2-2',
+            jaula: '102',
+            seccion: 'Fondo',
+            clasificacion: 'Sin Hallazgos',
+            observacion: 'Revisión de costuras y uniones de paños sin novedades.',
+            fotoUrl: '/report_j303.png',
+            profundidad: '15 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-pilpilehue-3',
+        fecha: '2026-07-18',
+        nombre: 'MONITOREO DE INTEGRIDAD JAULA 103 Y 104',
+        jefeCentro: 'Andrés Mansilla',
+        piloto: 'Carlos Varas',
+        empresa: 'SERVIROV',
+        puerto: 'Cerrado',
+        redes: 'RED PECERA (Desgarro de 1.0m en cuadrante inferior sur, reparado temporalmente)',
+        centroId: 'centro-pilpilehue',
+        userEmail: 'operador@servirov.cl',
+        findings: [
+          {
+            id: 'f-3-1',
+            jaula: '103',
+            seccion: 'Fondo',
+            clasificacion: 'Rotura de Red',
+            observacion: 'Desgarro de 1.0m en cuadrante inferior sur, reparado temporalmente.',
+            fotoUrl: '/report_pecera409.jpg',
+            profundidad: '20 metros'
+          },
+          {
+            id: 'f-3-2',
+            jaula: '104',
+            seccion: 'Fondo',
+            clasificacion: 'Sin Hallazgos',
+            observacion: 'Inspección rutinaria del cabezal de la jaula 104 sin observaciones.',
+            fotoUrl: '/report_ins301.png',
+            profundidad: '15 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-pilpilehue-4',
+        fecha: '2026-07-17',
+        nombre: 'MONITOREO DE BIOFOULING JAULA 108',
+        jefeCentro: 'Andrés Mansilla',
+        piloto: 'Carlos Varas',
+        empresa: 'SERVIROV',
+        puerto: 'Cerrado',
+        redes: 'LÍNEA DE ANCLAJE (Tensión de 142.5 kN registrada en fondeo, bajo monitoreo)',
+        centroId: 'centro-pilpilehue',
+        userEmail: 'operador@servirov.cl',
+        findings: [
+          {
+            id: 'f-4-1',
+            jaula: '108',
+            seccion: 'Fondo',
+            clasificacion: 'Sobretensión Fondeo',
+            observacion: 'Tensión de 142.5 kN registrada en fondeo, bajo monitoreo constante.',
+            fotoUrl: '/report_ins311.png',
+            profundidad: '24 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-pilpilehue-5',
+        fecha: '2026-07-16',
+        nombre: 'AUDITORÍA DE BIOFOULING JAULA 105-106',
+        jefeCentro: 'Andrés Mansilla',
+        piloto: 'Hugo Díaz',
+        empresa: 'SERVIROV',
+        puerto: 'Abierto',
+        redes: 'RED PECERA (Adherencia de algas moderada en jaula 105, limpieza programada)',
+        centroId: 'centro-pilpilehue',
+        userEmail: 'operador@servirov.cl',
+        findings: [
+          {
+            id: 'f-5-1',
+            jaula: '105',
+            seccion: 'Lateral',
+            clasificacion: 'Biofouling pesado',
+            observacion: 'Nivel de adherencia de algas moderado, requiere limpieza programada en 5 días.',
+            fotoUrl: '/report_ins311.png',
+            profundidad: '12 metros'
+          },
+          {
+            id: 'f-5-2',
+            jaula: '106',
+            seccion: 'Fondo',
+            clasificacion: 'Sin Hallazgos',
+            observacion: 'Inspección de fondo de módulo 106 sin observaciones.',
+            fotoUrl: '/report_j303.png',
+            profundidad: '18 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-pilpilehue-6',
+        fecha: '2026-07-15',
+        nombre: 'AUDITORÍA DE INTEGRIDAD CABEZAL JAULA 103',
+        jefeCentro: 'Andrés Mansilla',
+        piloto: 'Hugo Díaz',
+        empresa: 'SERVIROV',
+        puerto: 'Cerrado',
+        redes: 'RED LOBERA (Desgaste en unión de paño este a 2m de profundidad)',
+        centroId: 'centro-pilpilehue',
+        userEmail: 'operador@servirov.cl',
+        findings: [
+          {
+            id: 'f-6-1',
+            jaula: '103',
+            seccion: 'Lateral',
+            clasificacion: 'Sin Hallazgos',
+            observacion: 'Desgaste menor en unión de paño este a 2m de profundidad en red lobera.',
+            fotoUrl: '/report_ins301.png',
+            profundidad: '15 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-pilpilehue-7',
+        fecha: '2026-07-14',
+        nombre: 'INSPECCIÓN DE UNIÓN DE PAÑO JAULA 102',
+        jefeCentro: 'Andrés Mansilla',
+        piloto: 'Daniel Toro',
+        empresa: 'SERVIROV',
+        puerto: 'Abierto',
+        redes: 'RED PECERA (Revisión de costuras y tensores inferiores a 6m en módulo 102)',
+        centroId: 'centro-pilpilehue',
+        userEmail: 'operador@servirov.cl',
+        findings: [
+          {
+            id: 'f-7-1',
+            jaula: '102',
+            seccion: 'Fondo',
+            clasificacion: 'Sin Hallazgos',
+            observacion: 'Revisión de costuras y tensores inferiores a 6m conforme.',
+            fotoUrl: '/report_j303.png',
+            profundidad: '15 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-quellon-1',
+        fecha: '2026-07-14',
+        nombre: 'REVISIÓN DE BIOFOULING JAULA 403',
+        jefeCentro: 'Carlos Peña',
+        piloto: 'Cristian Barcena Córdova',
+        empresa: 'SERVIROV',
+        puerto: 'Abierto',
+        redes: 'RED PECERA (Acumulación moderada de algas en cuadrante norte)',
+        centroId: 'centro-quellon',
+        findings: [
+          {
+            id: 'f-q-1',
+            jaula: '403',
+            seccion: 'Lateral',
+            clasificacion: 'Biofouling pesado',
+            observacion: 'Acumulación moderada de algas en cuadrante norte.',
+            fotoUrl: '/report_ins311.png',
+            profundidad: '10 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-quellon-2',
+        fecha: '2026-07-12',
+        nombre: 'MONITOREO DE BIOMASA JAULA 401',
+        jefeCentro: 'Carlos Peña',
+        piloto: 'Carlos Varas',
+        empresa: 'SERVIROV',
+        puerto: 'Abierto',
+        redes: 'RED PECERA; RED LOBERA (Sin observaciones, comportamiento normal)',
+        centroId: 'centro-quellon',
+        findings: [
+          {
+            id: 'f-q-2',
+            jaula: '401',
+            seccion: 'Fondo',
+            clasificacion: 'Sin Hallazgos',
+            observacion: 'Comportamiento normal y mallas en buen estado.',
+            fotoUrl: '/report_ins301.png',
+            profundidad: '15 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-apiao-1',
+        fecha: '2026-07-14',
+        nombre: 'INSPECCIÓN DE PARCHES JAULA 303',
+        jefeCentro: 'Juan Silva',
+        piloto: 'Hugo Díaz',
+        empresa: 'SERVIROV',
+        puerto: 'Cerrado',
+        redes: 'RED PECERA (Desgarro menor de 0.5m en cuadrante este)',
+        centroId: 'centro-apiao',
+        findings: [
+          {
+            id: 'f-a-1',
+            jaula: '303',
+            seccion: 'Lateral',
+            clasificacion: 'Rotura de Red',
+            observacion: 'Desgarro menor de 0.5m en cuadrante este.',
+            fotoUrl: '/report_pecera409.jpg',
+            profundidad: '8 metros'
+          }
+        ]
+      },
+      {
+        id: 'r-apiao-2',
+        fecha: '2026-07-11',
+        nombre: 'LIMPIEZA DE MALLA JAULA 302',
+        jefeCentro: 'Juan Silva',
+        piloto: 'Daniel Toro',
+        empresa: 'SERVIROV',
+        puerto: 'Abierto',
+        redes: 'RED LOBERA (Retiro de suciedad y adherencias completo)',
+        centroId: 'centro-apiao',
+        findings: [
+          {
+            id: 'f-a-2',
+            jaula: '302',
+            seccion: 'Fondo',
+            clasificacion: 'Sin Hallazgos',
+            observacion: 'Retiro de suciedad y adherencias completo.',
+            fotoUrl: '/report_ins301.png',
+            profundidad: '12 metros'
+          }
+        ]
+      }
     ];
 
     function detectCageId(report) {
       const text = `${report.nombre} ${report.redes}`.toLowerCase();
+      // Look for any 3-digit number starting with 1, 3, or 4
+      const match = text.match(/\b(1|3|4)\d{2}\b/);
+      if (match) return match[0];
+      
+      // Fallback mappings
+      if (text.includes('b2') || text.includes('linea de fondeo b2')) return '108';
       if (text.includes('101')) return '101';
       if (text.includes('102')) return '102';
       if (text.includes('103')) return '103';
-      if (text.includes('104')) return '104';
       if (text.includes('105')) return '105';
-      if (text.includes('106')) return '106';
       if (text.includes('107')) return '107';
-      if (text.includes('108') || text.includes('b2')) return '108'; // B2 maps to 108
-      if (text.includes('109')) return '109';
-      if (text.includes('110')) return '110';
-      if (text.includes('111')) return '111';
       if (text.includes('112')) return '112';
-      if (text.includes('113')) return '113';
-      if (text.includes('114')) return '114';
+      if (text.includes('110')) return '110';
+      return '101';
     }
 
     function createLabelTexture(text) {
       const canvas = document.createElement('canvas');
       canvas.width = 256;
-      canvas.height = 256;
+      canvas.height = 128;
       const ctx = canvas.getContext('2d');
       
       // Clear transparent
-      ctx.clearRect(0, 0, 256, 256);
+      ctx.clearRect(0, 0, 256, 128);
       
       // Draw rectangular background
       ctx.fillStyle = '#06173a';
-      ctx.fillRect(32, 80, 192, 96);
+      ctx.fillRect(8, 8, 240, 112);
       
       // White border
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(32, 80, 192, 96);
+      ctx.lineWidth = 6;
+      ctx.strokeRect(8, 8, 240, 112);
       
       // Text
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 72px Outfit, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(text, 128, 128);
+      ctx.fillText(text, 128, 64);
       
       const texture = new THREE.CanvasTexture(canvas);
       return texture;
@@ -436,26 +785,181 @@
       return texture;
     }
 
-    function getMarker3DPosition(report, index, urlCenterId) {
-      const isPilpilehue = urlCenterId === 'centro-pilpilehue';
-      if (isPilpilehue) {
-        // Exact 3D positions corresponding to hotspots 1, 2, 3, 4, 5 in user screenshots
-        const spots = [
-          new THREE.Vector3(0, -6, 40),    // Hotspot 1 (Bottom end of 101)
-          new THREE.Vector3(-12, -4, 0),   // Hotspot 2 (Left side of 102)
-          new THREE.Vector3(12, 2, -14),   // Hotspot 3 (Right side of 102/103)
-          new THREE.Vector3(0, -2, -40),   // Hotspot 4 (Top end of 103)
-          new THREE.Vector3(0, -6, -14)    // Hotspot 5 (Divider of 102/103)
-        ];
-        return spots[index % spots.length];
+    function createMarkerBgTexture(colorType) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      ctx.clearRect(0, 0, 256, 256);
+      
+      // Color selection
+      let color = 'rgba(52, 211, 153, 0.7)'; // Green
+      if (colorType === 'red') {
+        color = 'rgba(239, 68, 68, 0.85)';
+      } else if (colorType === 'yellow') {
+        color = 'rgba(245, 158, 11, 0.85)';
+      }
+      
+      // Outer dashed radar circle
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 6;
+      ctx.setLineDash([16, 16]);
+      ctx.beginPath();
+      ctx.arc(128, 128, 116, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    function createMarkerFgTexture(number, colorType) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      ctx.clearRect(0, 0, 256, 256);
+      
+      const cx = 128;
+      const cy = 128;
+      
+      // Colors selection
+      let strokeColor = 'rgba(52, 211, 153, 0.95)';
+      let fillStyle = 'rgba(6, 78, 59, 0.85)';
+      let shadowColor = 'rgba(52, 211, 153, 0.85)';
+      
+      if (colorType === 'red') {
+        strokeColor = 'rgba(239, 68, 68, 0.95)';
+        fillStyle = 'rgba(127, 29, 29, 0.85)';
+        shadowColor = 'rgba(239, 68, 68, 0.85)';
+      } else if (colorType === 'yellow') {
+        strokeColor = 'rgba(245, 158, 11, 0.95)';
+        fillStyle = 'rgba(120, 53, 4, 0.85)';
+        shadowColor = 'rgba(245, 158, 11, 0.85)';
+      }
+      
+      // Inner glowing circle filled
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 10;
+      
+      // Shadow for glow effect
+      ctx.shadowColor = shadowColor;
+      ctx.shadowBlur = 20;
+      
+      ctx.fillStyle = fillStyle;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 88, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Reset shadow for text
+      ctx.shadowBlur = 0;
+      
+      // Text (White for extreme contrast and visibility)
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 100px JetBrains Mono, Outfit, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(number, cx, cy);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    function getMarker3DPosition(report, finding, globalIdx, urlCenterId) {
+      let cageId = (finding && finding.jaula) ? finding.jaula : detectCageId(report);
+      if (!cageId) cageId = '101';
+      cageId = cageId.replace('Jaula ', '').trim();
+
+      let lookupId = cageId;
+      if (cageId.startsWith('3') || cageId.startsWith('4')) {
+        lookupId = '1' + cageId.substring(1);
       }
 
-      // Fallback grid lookup
-      const cageId = detectCageId(report);
-      if (!cageId) return null;
-      const basePos = cageCoords[cageId];
-      if (!basePos) return null;
-      return new THREE.Vector3(basePos.x, 8, basePos.z);
+      const seccion = finding ? (finding.seccion || '').toLowerCase() : '';
+      let secKey = 'fondo';
+      if (seccion.includes('flotador') || seccion.includes('superficie')) secKey = 'flotador';
+      else if (seccion.includes('lateral')) secKey = 'lateral';
+
+      if (urlCenterId === 'centro-pilpilehue') {
+        let centerZ = 28; // default Jaula 101
+        const parsedNum = parseInt(lookupId, 10);
+        if (!isNaN(parsedNum)) {
+          if (lookupId === '101' || lookupId === '104' || lookupId === '107' || lookupId === '110') centerZ = 28;
+          else if (lookupId === '102' || lookupId === '105' || lookupId === '108' || lookupId === '111') centerZ = 0;
+          else if (lookupId === '103' || lookupId === '106' || lookupId === '109' || lookupId === '112') centerZ = -28;
+        }
+
+        let nodes = [];
+        if (secKey === 'flotador') {
+          // Surface ring / top beam wireframe intersections (Y = 8 to 9.5)
+          nodes = [
+            [-12, 8.5, centerZ], [12, 8.5, centerZ], [0, 8.5, centerZ],
+            [-12, 8.5, centerZ - 14], [12, 8.5, centerZ - 14], [0, 8.5, centerZ - 14],
+            [-12, 8.5, centerZ + 14], [12, 8.5, centerZ + 14], [0, 8.5, centerZ + 14]
+          ];
+        } else if (secKey === 'lateral') {
+          // Vertical wall intersections, distributed equally and higher up (Y = 5, 2, -1) where wireframe lines join
+          nodes = [
+            [-12, 5, centerZ], [12, 5, centerZ],
+            [-12, 2, centerZ], [12, 2, centerZ],
+            [-12, -1, centerZ], [12, -1, centerZ],
+            [-12, 5, centerZ - 14], [12, 5, centerZ - 14],
+            [-12, 2, centerZ - 14], [12, 2, centerZ - 14],
+            [-12, 5, centerZ + 14], [12, 5, centerZ + 14],
+            [-12, 2, centerZ + 14], [12, 2, centerZ + 14],
+            [0, 5, centerZ - 14], [0, 5, centerZ + 14],
+            [0, 2, centerZ - 14], [0, 2, centerZ + 14]
+          ];
+        } else {
+          // Bottom & lower-wall seam intersections, spread higher up (Y = -2, -5) right where wireframe lines join so they are super visible
+          nodes = [
+            [-12, -2, centerZ], [12, -2, centerZ], [0, -2, centerZ],
+            [-12, -5, centerZ], [12, -5, centerZ], [0, -5, centerZ],
+            [-12, -2, centerZ - 14], [12, -2, centerZ - 14], [0, -2, centerZ - 14],
+            [-12, -5, centerZ - 14], [12, -5, centerZ - 14], [0, -5, centerZ - 14],
+            [-12, -2, centerZ + 14], [12, -2, centerZ + 14], [0, -2, centerZ + 14],
+            [-12, -5, centerZ + 14], [12, -5, centerZ + 14], [0, -5, centerZ + 14]
+          ];
+        }
+
+        const picked = nodes[globalIdx % nodes.length];
+        const rawX = picked[0];
+        const rawY = picked[1];
+        const rawZ = picked[2];
+
+        // Apply exact mesh taper transformation so the coordinate sits precisely on the red wireframe lines of the installation
+        const normY = (rawY + 8) / 16;
+        const scaleX = 0.82 + 0.18 * normY;
+        const scaleZ = (76 + 8 * normY) / 84;
+        return new THREE.Vector3(rawX * scaleX, rawY, rawZ * scaleZ);
+      }
+
+      // Fallback 2x7 grid centers (Centro Apiao, Centro Quellon), distributed equally on the grid lines
+      const basePos = cageCoords[lookupId] || cageCoords['101'] || new THREE.Vector3(0, 8, 0);
+      const bx = basePos.x;
+      const bz = basePos.z;
+
+      let yPos = -3;
+      if (secKey === 'flotador') yPos = 8;
+      else if (secKey === 'lateral') yPos = 3;
+
+      // Exact wireframe corners and midpoint intersections of BoxGeometry(22, 16, 22) centered at (bx, 0, bz)
+      const gridNodes = [
+        new THREE.Vector3(bx - 11, yPos, bz - 11),
+        new THREE.Vector3(bx + 11, yPos, bz - 11),
+        new THREE.Vector3(bx - 11, yPos, bz + 11),
+        new THREE.Vector3(bx + 11, yPos, bz + 11),
+        new THREE.Vector3(bx, yPos, bz - 11),
+        new THREE.Vector3(bx, yPos, bz + 11),
+        new THREE.Vector3(bx - 11, yPos, bz),
+        new THREE.Vector3(bx + 11, yPos, bz)
+      ];
+
+      return gridNodes[globalIdx % gridNodes.length];
     }
 
     async function loadReportsAndCreateMarkers() {
@@ -472,7 +976,6 @@
         const { data: dbReports, error } = await supabaseClient
           .from('rov_reports')
           .select('*')
-          .eq('user_email', email)
           .order('fecha', { ascending: false });
 
         if (!error && dbReports && dbReports.length > 0) {
@@ -480,12 +983,13 @@
             id: r.id,
             fecha: r.fecha || '',
             nombre: r.nombre || '',
-            jefeCentro: r.jefe_centro || '',
+            jefeCentro: r.jefe_centro || r.jefeCentro || '',
             piloto: r.piloto || '',
             empresa: r.empresa || '',
             puerto: r.puerto || 'Abierto',
             redes: r.redes || '',
-            centroId: r.centro_id || ''
+            centroId: r.centro_id || r.centroId || '',
+            findings: r.findings || []
           }));
         }
       } catch (dbErr) {
@@ -495,11 +999,18 @@
       if (reports.length === 0) {
         const saved = localStorage.getItem(`subvision_rov_reports_${email}`);
         if (saved) {
-          reports = JSON.parse(saved);
-        } else if (email === 'operador@servirov.cl') {
-          reports = initialRovReportsFallback;
+          try {
+            reports = JSON.parse(saved);
+          } catch {}
         }
       }
+
+      // Always ensure initial fallback reports with their findings are present across all roles (Admin, Cliente, Piloto)
+      initialRovReportsFallback.forEach(def => {
+        if (!reports.some(r => r.id === def.id)) {
+          reports.push(def);
+        }
+      });
 
       const urlParams = new URLSearchParams(window.location.search);
       const urlCenterId = urlParams.get('center') || 'centro-pilpilehue';
@@ -510,43 +1021,107 @@
         'centro-quellon': 'Centro Quellón'
       };
       if (centerNameMap[urlCenterId]) {
-        document.getElementById('center-name').innerText = centerNameMap[urlCenterId];
+        const nameEl = document.getElementById('center-name');
+        if (nameEl) nameEl.innerText = centerNameMap[urlCenterId];
       }
 
       const centerReports = reports.filter(r => !r.centroId || r.centroId === urlCenterId);
 
-      // Order chronologically (oldest to newest) to match screenshot hotspot numbering 1, 2, 3, 4, 5
-      const chronologicalReports = [...centerReports].reverse();
+      // Order chronologically (oldest to newest)
+      const chronologicalReports = [...centerReports].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
       allReports = centerReports;
 
-      const container = document.getElementById('hud-indicators-container');
-      container.innerHTML = '';
-      markers = [];
+      // Clear old 3D markers from cageGroup
+      if (typeof threeMarkers !== 'undefined' && threeMarkers.length > 0) {
+        threeMarkers.forEach(m => {
+          if (cageGroup && m.group) {
+            cageGroup.remove(m.group);
+          }
+        });
+      }
+      threeMarkers = [];
 
-      chronologicalReports.forEach((report, index) => {
-        const markerPos = getMarker3DPosition(report, index, urlCenterId);
-        if (!markerPos) return;
+      let globalMarkerCounter = 0;
+      chronologicalReports.forEach((report) => {
+        const reportFindings = (report.findings && report.findings.length > 0) ? report.findings : [null];
 
-        const markerEl = document.createElement('div');
-        markerEl.className = 'absolute pointer-events-auto cursor-pointer transition-all duration-300';
-        markerEl.style.display = 'none';
+        reportFindings.forEach((finding) => {
+          const markerPos = getMarker3DPosition(report, finding, globalMarkerCounter, urlCenterId);
+          if (!markerPos) return;
 
-        const markerNumber = index + 1;
+          const markerNumber = globalMarkerCounter + 1;
+          globalMarkerCounter++;
 
-        markerEl.innerHTML = `
-          <div onclick="openDrawerForReport('${report.id}')" class="tech-marker">
-            ${markerNumber}
-          </div>
-        `;
+          // Detect color status based on finding or report details
+          const textDesc = finding 
+            ? `${finding.clasificacion || ''} ${finding.observacion || ''}`.toLowerCase()
+            : `${report.nombre} ${report.redes}`.toLowerCase();
+          
+          let markerColor = 'green';
+          if (finding) {
+            if (finding.clasificacion === 'Rotura de Red') markerColor = 'red';
+            else if (finding.clasificacion === 'Sobretensión Fondeo' || finding.clasificacion === 'Biofouling pesado') markerColor = 'yellow';
+          } else {
+            if (report.puerto === 'Cerrado' || textDesc.includes('rotura') || textDesc.includes('falla') || textDesc.includes('desgarro') || textDesc.includes('crítica')) {
+              markerColor = 'red';
+            }
+          }
 
-        container.appendChild(markerEl);
+          // Create textures
+          const fgTexture = createMarkerFgTexture(markerNumber, markerColor);
+          const bgTexture = createMarkerBgTexture(markerColor);
 
-        markers.push({
-          id: report.id,
-          pos: markerPos,
-          el: markerEl
+          // Create materials with depthTest: true so Three.js renders them reliably
+          const fgMaterial = new THREE.SpriteMaterial({ 
+            map: fgTexture, 
+            transparent: true,
+            depthWrite: false,
+            depthTest: true
+          });
+          const bgMaterial = new THREE.SpriteMaterial({ 
+            map: bgTexture, 
+            transparent: true,
+            depthWrite: false,
+            depthTest: true
+          });
+
+          // Create sprites
+          const fgSprite = new THREE.Sprite(fgMaterial);
+          fgSprite.scale.set(4.5, 4.5, 1);
+          fgSprite.renderOrder = 12; // Force rendering on top
+
+          const bgSprite = new THREE.Sprite(bgMaterial);
+          bgSprite.scale.set(5.5, 5.5, 1);
+          bgSprite.renderOrder = 11;
+
+          // Create Group
+          const markerGroup = new THREE.Group();
+          markerGroup.position.copy(markerPos);
+          markerGroup.add(bgSprite);
+          markerGroup.add(fgSprite);
+
+          // Add to cageGroup
+          if (cageGroup) {
+            cageGroup.add(markerGroup);
+          }
+
+          // Store references
+          threeMarkers.push({
+            id: report.id,
+            findingId: finding ? finding.id : null,
+            group: markerGroup,
+            bgSprite: bgSprite,
+            fgSprite: fgSprite,
+            baseScale: 4.5,
+            report: report,
+            finding: finding
+          });
         });
       });
+
+      if (typeof renderMiniCalendarGrid === 'function') {
+        renderMiniCalendarGrid();
+      }
 
       const params = new URLSearchParams(window.location.search);
       const reportId = params.get('report');
@@ -575,6 +1150,15 @@
       controls.maxPolarAngle = Math.PI / 2 - 0.05;
       controls.minDistance = 20;
       controls.maxDistance = 400;
+
+      // Initialize raycaster and mouse vector
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      // Bind canvas pointer events for 3D marker interaction
+      renderer.domElement.addEventListener('pointermove', onPointerMove);
+      renderer.domElement.addEventListener('pointerdown', onPointerDown);
+      renderer.domElement.addEventListener('pointerup', onPointerUp);
 
       const ambientLight = new THREE.AmbientLight(0x0a224a, 1.8);
       scene.add(ambientLight);
@@ -650,39 +1234,153 @@
           { id: '101', z: 28 }
         ];
 
+        // 1. Create the outer net geometry for transparent filled walls
+        const outerNetGeo = new THREE.BoxGeometry(24, 16, 84, 2, 2, 6);
+        const pos = outerNetGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          let x = pos.getX(i);
+          let y = pos.getY(i);
+          let z = pos.getZ(i);
+
+          const normY = (y + 8) / 16;
+          const scaleX = 0.82 + 0.18 * normY;
+          x *= scaleX;
+
+          const scaleZ = (76 + 8 * normY) / 84;
+          z *= scaleZ;
+
+          pos.setXYZ(i, x, y, z);
+        }
+        outerNetGeo.computeVertexNormals();
+        outerNetGeo.attributes.position.needsUpdate = true;
+
+        const netWallMat = new THREE.MeshBasicMaterial({
+          color: 0xef4444,
+          transparent: true,
+          opacity: 0.08,
+          side: THREE.DoubleSide
+        });
+        const outerNetWall = new THREE.Mesh(outerNetGeo, netWallMat);
+        outerNetWall.position.set(0, 0, 0);
+        cageGroup.add(outerNetWall);
+
+        // 2. Generate clean custom grid wireframe (no side diagonals)
+        const gridPoints = [];
+        const xCoords = [-12, 0, 12];
+        const yCoords = [-8, 0, 8];
+        const zCoords = [-42, -28, -14, 0, 14, 28, 42];
+
+        function getTaperedPt(x, y, z) {
+          const normY = (y + 8) / 16;
+          const scaleX = 0.82 + 0.18 * normY;
+          const scaleZ = (76 + 8 * normY) / 84;
+          return new THREE.Vector3(x * scaleX, y, z * scaleZ);
+        }
+
+        // Longitudinal lines (along Z)
+        xCoords.forEach(x => {
+          yCoords.forEach(y => {
+            for (let i = 0; i < zCoords.length - 1; i++) {
+              gridPoints.push(getTaperedPt(x, y, zCoords[i]));
+              gridPoints.push(getTaperedPt(x, y, zCoords[i+1]));
+            }
+          });
+        });
+
+        // Transverse lines (along X)
+        zCoords.forEach(z => {
+          yCoords.forEach(y => {
+            for (let i = 0; i < xCoords.length - 1; i++) {
+              gridPoints.push(getTaperedPt(xCoords[i], y, z));
+              gridPoints.push(getTaperedPt(xCoords[i+1], y, z));
+            }
+          });
+        });
+
+        // Vertical lines (along Y)
+        xCoords.forEach(x => {
+          zCoords.forEach(z => {
+            for (let i = 0; i < yCoords.length - 1; i++) {
+              gridPoints.push(getTaperedPt(x, yCoords[i], z));
+              gridPoints.push(getTaperedPt(x, yCoords[i+1], z));
+            }
+          });
+        });
+
+        // Diagonals for bottom quads (Y from -8 to 0) on outer sides
+        [-12, 12].forEach(x => {
+          for (let i = 0; i < zCoords.length - 1; i++) {
+            gridPoints.push(getTaperedPt(x, 0, zCoords[i]));
+            gridPoints.push(getTaperedPt(x, -8, zCoords[i+1]));
+          }
+        });
+
+        // Diagonals for bottom ends (Z = -42 and Z = 42)
+        [-42, 42].forEach(z => {
+          gridPoints.push(getTaperedPt(-12, 0, z));
+          gridPoints.push(getTaperedPt(12, -8, z));
+          gridPoints.push(getTaperedPt(12, 0, z));
+          gridPoints.push(getTaperedPt(-12, -8, z));
+        });
+
+        // Diagonals for bottom floor (Y = -8)
+        for (let i = 0; i < zCoords.length - 1; i++) {
+          gridPoints.push(getTaperedPt(-12, -8, zCoords[i]));
+          gridPoints.push(getTaperedPt(0, -8, zCoords[i+1]));
+          gridPoints.push(getTaperedPt(0, -8, zCoords[i]));
+          gridPoints.push(getTaperedPt(12, -8, zCoords[i+1]));
+        }
+
+        // Add partition lines to grid
+        [-14, 14].forEach(zPos => {
+          // Vertical lines
+          [-12, 0, 12].forEach(x => {
+            gridPoints.push(getTaperedPt(x, -8, zPos));
+            gridPoints.push(getTaperedPt(x, 8, zPos));
+          });
+          // Horizontal lines
+          [-8, 0, 8].forEach(y => {
+            gridPoints.push(getTaperedPt(-12, y, zPos));
+            gridPoints.push(getTaperedPt(12, y, zPos));
+          });
+          // Diagonals for partitions bottom half
+          gridPoints.push(getTaperedPt(-12, 0, zPos));
+          gridPoints.push(getTaperedPt(12, -8, zPos));
+        });
+
+        // Create the wireframe mesh using custom points
+        const lineMat = new THREE.LineBasicMaterial({ 
+          color: 0xef4444, 
+          linewidth: 1.5,
+          transparent: true,
+          opacity: 0.8
+        });
+        const gridGeo = new THREE.BufferGeometry().setFromPoints(gridPoints);
+        const outerNetLine = new THREE.LineSegments(gridGeo, lineMat);
+        cageGroup.add(outerNetLine);
+
+        // 3. Create transparent partition walls (for filled volume rendering)
+        [-14, 14].forEach(zPos => {
+          const partGeo = new THREE.PlaneGeometry(24, 16, 2, 2);
+          const partPos = partGeo.attributes.position;
+          for (let i = 0; i < partPos.count; i++) {
+            let x = partPos.getX(i);
+            let y = partPos.getY(i);
+            const normY = (y + 8) / 16;
+            const scaleX = 0.82 + 0.18 * normY;
+            x *= scaleX;
+            partPos.setXYZ(i, x, y, 0);
+          }
+          partGeo.computeVertexNormals();
+          partGeo.attributes.position.needsUpdate = true;
+
+          const partWall = new THREE.Mesh(partGeo, netWallMat);
+          partWall.position.set(0, 0, zPos);
+          cageGroup.add(partWall);
+        });
+
+        // 4. Create 3D Dark Blue rectangular labels inside cages
         cagesData.forEach(c => {
-          // Platform collar
-          const collarGeo = new THREE.BoxGeometry(24, 0.8, 24);
-          const collarMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5 });
-          const collar = new THREE.Mesh(collarGeo, collarMat);
-          collar.position.set(0, 8, c.z);
-          cageGroup.add(collar);
-
-          // Net wireframe (solid red edges)
-          const netGeo = new THREE.BoxGeometry(22, 16, 22);
-          const wireframe = new THREE.EdgesGeometry(netGeo);
-          const lineMat = new THREE.LineBasicMaterial({ 
-            color: 0xef4444, 
-            linewidth: 2,
-            transparent: true,
-            opacity: 0.85
-          });
-          const netLine = new THREE.LineSegments(wireframe, lineMat);
-          netLine.position.set(0, 0, c.z);
-          cageGroup.add(netLine);
-
-          // Net walls (transparent red fill)
-          const netWallMat = new THREE.MeshBasicMaterial({
-            color: 0xef4444,
-            transparent: true,
-            opacity: 0.08,
-            side: THREE.DoubleSide
-          });
-          const netWall = new THREE.Mesh(netGeo, netWallMat);
-          netWall.position.set(0, 0, c.z);
-          cageGroup.add(netWall);
-
-          // 3D Dark Blue rectangular label inside cage
           const labelGeo = new THREE.PlaneGeometry(12, 6);
           const labelMat = new THREE.MeshBasicMaterial({ map: createLabelTexture(c.id), side: THREE.DoubleSide });
           const labelMesh = new THREE.Mesh(labelGeo, labelMat);
@@ -691,14 +1389,11 @@
           cageGroup.add(labelMesh);
         });
       } else {
-        // 2x7 cages grid fallback for other centers
-        const statusMap = {
-          101: 0, 102: 0, 103: 1, 104: 0, 105: 2, 106: 0, 
-          107: 2, 108: 2, 109: 0, 110: 1, 111: 0, 112: 1, 
-          113: 0, 114: 0
-        };
+        // 2x7 cages grid fallback for other centers (Centro Apiao - Módulo 300 and Centro Quellón - Módulo 400)
+        let baseId = 300;
+        if (urlCenterId === 'centro-quellon') baseId = 400;
 
-        const colorMap = [0x10b981, 0xf59e0b, 0xef4444];
+        const colorMap = [0x10b981, 0xef4444]; // Green, Red (Strictly bicolor)
 
         const longBeamGeo = new THREE.BoxGeometry(196, 1.2, 1.2);
         const beamMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 });
@@ -721,15 +1416,15 @@
           const z = (r - 0.5) * 28;
           for (let c = 0; c < 7; c++) {
             const x = (c - 3) * 28;
-            const cageId = (r === 0) ? (113 - c * 2) : (114 - c * 2);
-            const cageStatus = statusMap[cageId] !== undefined ? statusMap[cageId] : 0;
-            const cageColor = colorMap[cageStatus];
+            
+            // Map cage ID: Row 1 has 301, 303, ... / 401, 403, ...
+            // Row 2 has 302, 304, ... / 402, 404, ...
+            const cageIdNum = (r === 0) ? (baseId + 1 + c * 2) : (baseId + 2 + c * 2);
+            const cageId = cageIdNum.toString();
 
-            const collarGeo = new THREE.BoxGeometry(24, 0.8, 24);
-            const collarMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5 });
-            const collar = new THREE.Mesh(collarGeo, collarMat);
-            collar.position.set(x, 8, z);
-            cageGroup.add(collar);
+            // Strictly bicolor color assignment
+            const isCrit = cageId === '303' || cageId === '403';
+            const cageColor = isCrit ? 0xef4444 : 0x10b981;
 
             const netGeo = new THREE.BoxGeometry(22, 16, 22);
             const wireframe = new THREE.EdgesGeometry(netGeo);
@@ -743,7 +1438,15 @@
             netWall.position.set(x, 0, z);
             cageGroup.add(netWall);
 
-            if (cageStatus === 2) {
+            // Add 3D label inside the cage
+            const labelGeo = new THREE.PlaneGeometry(12, 6);
+            const labelMat = new THREE.MeshBasicMaterial({ map: createLabelTexture(cageId), side: THREE.DoubleSide });
+            const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+            labelMesh.rotation.x = -Math.PI / 2;
+            labelMesh.position.set(x, 8.15, z);
+            cageGroup.add(labelMesh);
+
+            if (isCrit) {
               const alertGeo = new THREE.BoxGeometry(24.5, 17, 24.5);
               const alertWire = new THREE.EdgesGeometry(alertGeo);
               const alertMat = new THREE.LineBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.7 });
@@ -807,31 +1510,66 @@
       });
     }
 
-    function updateMarkers() {
-      const tempV = new THREE.Vector3();
+    function onPointerMove(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-      markers.forEach(marker => {
-        tempV.copy(marker.pos);
-        
-        // Sync with the platform wave motion so markers stay glued
-        if (cageGroup) {
-          tempV.y += cageGroup.position.y;
+      raycaster.setFromCamera(mouse, camera);
+
+      const targets = threeMarkers.map(m => m.fgSprite);
+      const intersects = raycaster.intersectObjects(targets);
+
+      if (intersects.length > 0) {
+        const hitSprite = intersects[0].object;
+        const marker = threeMarkers.find(m => m.fgSprite === hitSprite);
+
+        if (marker) {
+          document.body.style.cursor = 'pointer';
+          
+          if (hoveredMarker !== marker) {
+            if (hoveredMarker) {
+              hoveredMarker.fgSprite.scale.set(hoveredMarker.baseScale, hoveredMarker.baseScale, 1);
+            }
+            
+            hoveredMarker = marker;
+            const hoverScale = marker.baseScale * 1.25;
+            marker.fgSprite.scale.set(hoverScale, hoverScale, 1);
+          }
         }
-
-        tempV.project(camera);
-
-        if (tempV.z > 1) {
-          marker.el.style.display = 'none';
-          return;
+      } else {
+        document.body.style.cursor = 'default';
+        if (hoveredMarker) {
+          hoveredMarker.fgSprite.scale.set(hoveredMarker.baseScale, hoveredMarker.baseScale, 1);
+          hoveredMarker = null;
         }
+      }
+    }
 
-        const x = (tempV.x *  .5 + .5) * window.innerWidth;
-        const y = (tempV.y * -.5 + .5) * window.innerHeight;
+    function onPointerDown(event) {
+      pointerDownPos.x = event.clientX;
+      pointerDownPos.y = event.clientY;
+    }
 
-        marker.el.style.left = `${x - 19}px`;
-        marker.el.style.top = `${y - 19}px`;
-        marker.el.style.display = 'block';
-      });
+    function onPointerUp(event) {
+      const dist = Math.hypot(event.clientX - pointerDownPos.x, event.clientY - pointerDownPos.y);
+      if (dist > 5) return; // Ignore drag operations
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const targets = threeMarkers.map(m => m.fgSprite);
+      const intersects = raycaster.intersectObjects(targets);
+
+      if (intersects.length > 0) {
+        const hitSprite = intersects[0].object;
+        const marker = threeMarkers.find(m => m.fgSprite === hitSprite);
+        if (marker) {
+          openDrawerForReport(marker.id, marker.findingId);
+        }
+      }
     }
 
     function animate() {
@@ -847,7 +1585,14 @@
         cageGroup.rotation.z = Math.cos(time * 0.8) * 0.005;
       }
 
-      updateMarkers();
+      // Rotate background sprites for radar animation
+      if (typeof threeMarkers !== 'undefined') {
+        threeMarkers.forEach(m => {
+          if (m.bgSprite) {
+            m.bgSprite.material.rotation += 0.008;
+          }
+        });
+      }
 
       renderer.render(scene, camera);
     }
@@ -858,7 +1603,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    function openDrawerForReport(reportId) {
+    function openDrawerForReport(reportId, targetFindingId) {
       const report = allReports.find(r => r.id === reportId);
       if (!report) return;
 
@@ -874,22 +1619,25 @@
       if (inpVal) {
         inpVal.value = '';
       }
-      const cageId = detectCageId(report) || 'General';
 
-      // 1000x Improved details mapping
+      // Find target finding or first finding
+      const targetFinding = (report.findings && report.findings.length > 0) 
+        ? (targetFindingId ? (report.findings.find(f => f.id === targetFindingId) || report.findings[0]) : report.findings[0])
+        : null;
+
+      const cageId = targetFinding ? targetFinding.jaula : (detectCageId(report) || '103').replace('Jaula ', '');
+
       document.getElementById('drawer-title').innerText = `Reporte: Jaula ${cageId}`;
-      
-      // Update form grid parameters
       document.getElementById('field-jaula').innerText = cageId;
       
-      // Dynamic depth mapping
-      let depth = '20 metros';
-      if (report.nombre.includes('105') || report.redes.includes('105')) depth = '12 metros';
-      else if (report.redes.includes('108') || report.redes.includes('B2')) depth = '24 metros';
-      else if (report.redes.includes('110')) depth = '18 metros';
+      let depth = targetFinding ? targetFinding.profundidad : '20 metros';
+      if (!targetFinding) {
+        if (report.nombre.includes('105') || report.redes.includes('105')) depth = '12 metros';
+        else if (report.redes.includes('108') || report.redes.includes('B2')) depth = '24 metros';
+        else if (report.redes.includes('110')) depth = '18 metros';
+      }
       document.getElementById('field-profundidad').innerText = depth;
 
-      // Adjacent referential cages
       let ref1 = '-';
       let ref2 = '-';
       const parsedCageNum = parseInt(cageId);
@@ -900,81 +1648,342 @@
       document.getElementById('field-ref1').innerText = `Jaula ${ref1}`;
       document.getElementById('field-ref2').innerText = ref2 !== '115' ? `Jaula ${ref2}` : '-';
 
-      // Net section
-      let seccion = 'Fondo';
-      if (report.nombre.toLowerCase().includes('flotador') || report.redes.toLowerCase().includes('flotador')) {
-        seccion = 'Flotador';
-      } else if (report.redes.toLowerCase().includes('lateral')) {
-        seccion = 'Lateral';
+      let seccion = targetFinding ? targetFinding.seccion : 'Fondo';
+      if (!targetFinding) {
+        if (report.nombre.toLowerCase().includes('flotador') || report.redes.toLowerCase().includes('flotador')) seccion = 'Flotador';
+        else if (report.redes.toLowerCase().includes('lateral')) seccion = 'Lateral';
       }
       document.getElementById('field-seccion').innerText = seccion;
 
-      // Classification
-      let clasificacion = 'Sin Hallazgos';
-      if (report.redes.toLowerCase().includes('rotura') || report.redes.toLowerCase().includes('falla') || report.redes.toLowerCase().includes('desgarro')) {
-        clasificacion = 'Rotura de Red';
-      } else if (report.redes.toLowerCase().includes('tensión') || report.redes.toLowerCase().includes('fondeo')) {
-        clasificacion = 'Sobretensión Fondeo';
-      } else if (report.redes.toLowerCase().includes('algas') || report.redes.toLowerCase().includes('biofouling')) {
-        clasificacion = 'Biofouling pesado';
+      let clasificacion = targetFinding ? targetFinding.clasificacion : 'Sin Hallazgos';
+      if (!targetFinding) {
+        if (report.redes.toLowerCase().includes('rotura') || report.redes.toLowerCase().includes('falla') || report.redes.toLowerCase().includes('desgarro')) clasificacion = 'Rotura de Red';
+        else if (report.redes.toLowerCase().includes('tensión') || report.redes.toLowerCase().includes('fondeo')) clasificacion = 'Sobretensión Fondeo';
+        else if (report.redes.toLowerCase().includes('algas') || report.redes.toLowerCase().includes('biofouling')) clasificacion = 'Biofouling pesado';
       }
       document.getElementById('field-clasificacion').innerText = clasificacion;
 
-      // Badges
-      let statusColorText = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
       let statusBadgeStyle = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
-      let statusText = 'Óptimo - Sin fallas';
       let estadoText = 'Resuelto / Reparado';
 
-      if (report.puerto === 'Cerrado') {
-        const text = `${report.nombre} ${report.redes}`.toLowerCase();
-        if (text.includes('rotura') || text.includes('falla') || text.includes('tensión') || text.includes('desgarro') || text.includes('crítica')) {
-          statusColorText = 'text-red-400 bg-red-500/10 border-red-500/30';
-          statusBadgeStyle = 'bg-red-500/20 text-red-300 border-red-500/40';
-          statusText = 'Crítico - Emergencia';
-          estadoText = 'Pendiente / Crítico';
-        } else {
-          statusColorText = 'text-amber-400 bg-amber-500/10 border-amber-500/30';
-          statusBadgeStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
-          statusText = 'Advertencia - En Revisión';
-          estadoText = 'En Proceso';
-        }
-      } else {
-        const text = `${report.nombre} ${report.redes}`.toLowerCase();
-        if (text.includes('biofouling') || text.includes('depredador') || text.includes('desgaste')) {
-          statusColorText = 'text-amber-400 bg-amber-500/10 border-amber-500/30';
-          statusBadgeStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
-          statusText = 'Advertencia';
-          estadoText = 'En Proceso';
-        }
+      if (report.puerto === 'Cerrado' || clasificacion === 'Rotura de Red') {
+        statusBadgeStyle = 'bg-red-500/20 text-red-300 border-red-500/40';
+        estadoText = 'Pendiente / Crítico';
       }
 
       document.getElementById('field-estado-text').innerText = estadoText;
       
       const badgeEl = document.getElementById('field-estado-badge');
-      badgeEl.innerText = report.puerto === 'Abierto' ? 'Abierto' : 'Cerrado';
-      badgeEl.className = `px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border leading-none ${statusBadgeStyle}`;
+      if (badgeEl) {
+        badgeEl.innerText = report.puerto === 'Abierto' ? 'Abierto' : 'Cerrado';
+        badgeEl.className = `px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border leading-none ${statusBadgeStyle}`;
+      }
+
+      // Safe fallback photo without ReferenceError
+      const fallbackPhoto = report.redes.toLowerCase().includes('rotura') ? '/report_pecera409.jpg' : (report.redes.toLowerCase().includes('tensión') ? '/report_ins311.png' : '/report_ins301.png');
+      const reportFindings = (report.findings && report.findings.length > 0) ? report.findings : [
+        {
+          id: 'f-fallback',
+          jaula: cageId,
+          seccion: seccion,
+          clasificacion: clasificacion,
+          observacion: report.redes || report.nombre,
+          fotoUrl: fallbackPhoto,
+          profundidad: depth
+        }
+      ];
+
+      let findingsHtml = '';
+      reportFindings.forEach(f => {
+        const isRed = f.clasificacion === 'Rotura de Red';
+        const isSelected = targetFindingId ? (f.id === targetFindingId) : (f === reportFindings[0]);
+        const badgeColorStyle = isRed ? 'text-red-400 bg-red-500/10 border-red-500/30' : (f.clasificacion === 'Sobretensión Fondeo' || f.clasificacion === 'Biofouling pesado' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30');
+        const badgeText = isRed ? 'Crítico - Emergencia' : (f.clasificacion === 'Sobretensión Fondeo' || f.clasificacion === 'Biofouling pesado' ? 'Advertencia' : 'Óptimo');
+
+        let waBtn = '';
+        if (isRed) {
+          waBtn = `
+            <button onclick="triggerVisorWhatsAppAlert('${report.nombre.replace(/'/g, "\\'")}', '${f.jaula}')" 
+              style="width:100%;margin-top:8px;padding:8px 12px;background:#22c55e;color:#0b1124;font-weight:800;font-size:10px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.2s;"
+              onmouseenter="this.style.background='#16a34a'"
+              onmouseleave="this.style.background='#22c55e'">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="display:inline-block;vertical-align:middle;"><path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 001.37 5.054L2 22l5.12-1.335a9.97 9.97 0 004.887 1.281c5.507 0 9.99-4.478 9.99-9.986 0-5.507-4.483-9.96-9.985-9.96zm5.836 14.199c-.247.694-1.43 1.282-1.954 1.341-.497.058-.996.248-3.15-.634-2.613-1.07-4.282-3.724-4.413-3.899-.133-.174-1.077-1.428-1.077-2.723 0-1.296.677-1.933.918-2.193.243-.26.529-.323.705-.323.176 0 .353.002.507.01.161.008.375-.062.588.448.219.529.749 1.83.813 1.963.064.133.107.289.019.464-.088.176-.133.289-.265.441-.133.152-.278.339-.397.457-.133.133-.272.278-.117.544.156.265.69 1.135 1.48 1.838.79.703 1.455.92 1.662 1.026.208.107.329.088.452-.053.123-.142.53-.615.672-.824.143-.21.284-.176.478-.104.195.072 1.238.584 1.45.69.213.107.354.161.408.251.054.09.054.524-.193 1.218z"/></svg>
+              <span>Enviar alerta a WhatsApp</span>
+            </button>
+          `;
+        }
+
+        const selectedStyle = isSelected 
+          ? 'border-2 border-cyan-400 bg-cyan-950/70 shadow-[0_0_20px_rgba(34,211,238,0.3)]' 
+          : 'border border-cyan-500/10 bg-[#0c1a36]/50';
+
+        findingsHtml += `
+          <div id="drawer-card-${f.id}" class="p-3.5 rounded-xl space-y-2 backdrop-blur-md mb-3 last:mb-0 transition-all duration-300 ${selectedStyle}">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-white text-[11px] uppercase">Módulo ${f.jaula}</span>
+              <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${badgeColorStyle}">
+                ${badgeText}
+              </span>
+            </div>
+            
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <div style="flex:1;">
+                <p class="text-slate-300 text-[10.5px] leading-relaxed">
+                  ${f.observacion}
+                </p>
+                <div class="grid grid-cols-2 gap-1.5 text-[8px] text-slate-400 font-mono mt-2 pt-1 border-t border-cyan-500/5">
+                  <div>Sección: <strong>${f.seccion}</strong></div>
+                  <div>Profundidad: <strong>${f.profundidad}</strong></div>
+                  <div>Clasificación: <strong>${f.clasificacion}</strong></div>
+                </div>
+              </div>
+              
+              <div class="relative group rounded-lg overflow-hidden bg-black/40 w-[80px] aspect-video cursor-pointer border ${isRed ? 'border-red-500/50' : 'border-white/10'}" onclick="openFullscreenMedia('${f.fotoUrl}', 'image')">
+                <img src="${f.fotoUrl}" class="w-full h-full object-cover" />
+                <span class="absolute bottom-0.5 left-1 bg-black/75 text-[5px] text-white px-1 rounded font-mono">${f.clasificacion === 'Rotura de Red' ? 'rotura' : 'inspección'}</span>
+              </div>
+            </div>
+            ${waBtn}
+          </div>
+        `;
+      });
 
       const contentEl = document.getElementById('drawer-content');
-      contentEl.innerHTML = `
-        <div class="border border-cyan-500/20 p-4 rounded-xl space-y-2 bg-[#0c1a36]/70 backdrop-blur-md">
-          <div class="flex items-center justify-between">
-            <span class="font-black text-white text-[11px] uppercase">${report.piloto}</span>
-            <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${statusColorText}">
-              ${statusText}
-            </span>
-          </div>
-          <p class="text-slate-300 italic text-[11px] leading-relaxed">
-            "${report.nombre}: ${report.redes}"
-          </p>
-          <div class="text-[8px] text-slate-500 font-mono pt-1.5 border-t border-cyan-500/10 flex justify-between">
-            <span>Jefe de Centro: ${report.jefeCentro}</span>
-            <span>Fecha: ${report.fecha}</span>
-          </div>
-        </div>
-      `;
+      if (contentEl) contentEl.innerHTML = findingsHtml;
 
-      document.getElementById('drawer').classList.remove('translate-x-full');
+      const mediaEl = document.getElementById('drawer-media-section');
+      if (mediaEl) mediaEl.innerHTML = '';
+
+      // Highlight the corresponding 3D marker
+      if (typeof threeMarkers !== 'undefined') {
+        threeMarkers.forEach(m => {
+          const isMatch = targetFindingId 
+            ? (m.findingId === targetFindingId) 
+            : (m.id === reportId || (m.report && m.report.id === reportId));
+          if (m.fgSprite) {
+            if (isMatch) {
+              m.fgSprite.scale.set(m.baseScale * 1.45, m.baseScale * 1.45, 1);
+            } else {
+              m.fgSprite.scale.set(m.baseScale, m.baseScale, 1);
+            }
+          }
+        });
+      }
+
+      // Render calendar and list of other findings
+      renderFindingsCalendarList(reportId, selectedCalendarDate, targetFindingId);
+
+      const drawerEl = document.getElementById('drawer');
+      if (drawerEl) {
+        drawerEl.classList.remove('translate-x-full');
+      }
+
+      // Scroll highlighted card into view inside drawer
+      if (targetFindingId) {
+        setTimeout(() => {
+          const cardEl = document.getElementById(`drawer-card-${targetFindingId}`);
+          if (cardEl && typeof cardEl.scrollIntoView === 'function') {
+            cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      }
+    }
+
+    let selectedCalendarDate = null;
+
+    function changeCalendarMonth(offset) {
+      calendarViewDate.setMonth(calendarViewDate.getMonth() + offset);
+      renderMiniCalendarGrid();
+    }
+
+    function clearCalendarFilter() {
+      selectedCalendarDate = null;
+      renderMiniCalendarGrid();
+      renderFindingsCalendarList(activeReportId, null);
+    }
+
+    function selectCalendarDay(dayNum) {
+      const year = calendarViewDate.getFullYear();
+      const month = String(calendarViewDate.getMonth() + 1).padStart(2, '0');
+      const day = String(dayNum).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      
+      if (selectedCalendarDate === dateStr) {
+        selectedCalendarDate = null;
+      } else {
+        selectedCalendarDate = dateStr;
+      }
+      
+      renderMiniCalendarGrid();
+      renderFindingsCalendarList(activeReportId, selectedCalendarDate);
+    }
+
+    function renderMiniCalendarGrid() {
+      const grid = document.getElementById('calendar-days-grid');
+      const label = document.getElementById('calendar-month-year');
+      const statusLabel = document.getElementById('calendar-filter-status');
+      if (!grid || !label) return;
+
+      const year = calendarViewDate.getFullYear();
+      const month = calendarViewDate.getMonth();
+
+      const monthNames = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      ];
+      label.innerText = `${monthNames[month]} ${year}`;
+
+      grid.innerHTML = '';
+
+      const firstDay = new Date(year, month, 1);
+      let startDayOfWeek = firstDay.getDay();
+      startDayOfWeek = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+
+      const numDays = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < startDayOfWeek; i++) {
+        const cell = document.createElement('div');
+        grid.appendChild(cell);
+      }
+
+      const reportsByDay = {};
+      allReports.forEach(r => {
+        if (!r.fecha) return;
+        const [rYear, rMonth, rDay] = r.fecha.split('-').map(Number);
+        if (rYear === year && (rMonth - 1) === month) {
+          const txt = `${r.nombre} ${r.redes}`.toLowerCase();
+          const isCrit = r.puerto === 'Cerrado' || txt.includes('rotura') || txt.includes('falla') || txt.includes('desgarro') || txt.includes('crítica');
+          
+          if (!reportsByDay[rDay]) {
+            reportsByDay[rDay] = { isCrit: false };
+          }
+          if (isCrit) {
+            reportsByDay[rDay].isCrit = true;
+          }
+        }
+      });
+
+      for (let day = 1; day <= numDays; day++) {
+        const cell = document.createElement('div');
+        cell.style.fontFamily = 'monospace';
+        cell.style.fontSize = '9px';
+        cell.style.fontWeight = 'bold';
+        cell.style.padding = '3px 0';
+        cell.style.borderRadius = '6px';
+        cell.style.cursor = 'pointer';
+        cell.style.position = 'relative';
+        cell.style.display = 'flex';
+        cell.style.flexDirection = 'column';
+        cell.style.alignItems = 'center';
+        cell.style.justifyContent = 'center';
+        cell.style.transition = 'all 0.15s';
+        cell.innerText = day;
+
+        const dayStr = String(day).padStart(2, '0');
+        const monthStr = String(month + 1).padStart(2, '0');
+        const cellDateStr = `${year}-${monthStr}-${dayStr}`;
+
+        const isSelected = selectedCalendarDate === cellDateStr;
+        const hasReports = reportsByDay[day] !== undefined;
+
+        if (isSelected) {
+          cell.style.background = '#06b6d4';
+          cell.style.color = '#0f172a';
+        } else if (hasReports) {
+          cell.style.background = 'rgba(6, 182, 212, 0.08)';
+          cell.style.color = '#f1f5f9';
+          cell.style.border = '1px solid rgba(6, 182, 212, 0.2)';
+        } else {
+          cell.style.color = '#475569';
+        }
+
+        if (hasReports) {
+          const dot = document.createElement('div');
+          dot.style.width = '3.5px';
+          dot.style.height = '3.5px';
+          dot.style.borderRadius = '50%';
+          dot.style.marginTop = '2px';
+          dot.style.background = reportsByDay[day].isCrit ? '#f87171' : '#34d399';
+          cell.appendChild(dot);
+        }
+
+        cell.onclick = () => selectCalendarDay(day);
+        grid.appendChild(cell);
+      }
+
+      if (selectedCalendarDate) {
+        statusLabel.innerText = selectedCalendarDate;
+        statusLabel.style.color = '#22d3ee';
+      } else {
+        statusLabel.innerText = 'Sin filtro';
+        statusLabel.style.color = '#64748b';
+      }
+    }
+
+    function renderFindingsCalendarList(activeId, filterDate, activeFindingId) {
+      var lc = document.getElementById('other-findings-list');
+      var ce = document.getElementById('findings-total-count');
+      if (!lc) return;
+
+      var totalFindingsCount = 0;
+      allReports.forEach(function(r) {
+        if (r.findings && r.findings.length > 0) totalFindingsCount += r.findings.length;
+        else totalFindingsCount += 1;
+      });
+      if (ce) ce.innerText = totalFindingsCount + (totalFindingsCount === 1 ? ' hallazgo registrado' : ' hallazgos registrados');
+
+      var rows = filterDate ? allReports.filter(function(r){ return r.fecha === filterDate; }) : allReports;
+
+      if (rows.length === 0) {
+        lc.innerHTML = '<div style="padding:32px 0;text-align:center;color:#64748b;font-size:12px;">Sin registros para esta fecha.</div>';
+        return;
+      }
+
+      var html = '';
+      rows.forEach(function(r) {
+        var rFindings = (r.findings && r.findings.length > 0) ? r.findings : [{
+          id: null,
+          jaula: (detectCageId(r) || '?').replace('Jaula ', ''),
+          clasificacion: (r.redes.toLowerCase().includes('rotura') ? 'Rotura de Red' : 'Sin Hallazgos'),
+          observacion: r.nombre || r.redes || 'Inspección'
+        }];
+
+        rFindings.forEach(function(f) {
+          var isCurrent = activeFindingId ? (f.id === activeFindingId) : (r.id === activeId);
+          var cage = (f.jaula || (detectCageId(r) || '?').replace('Jaula ', ''));
+          var txt  = ((f.clasificacion || '') + ' ' + (f.observacion || '') + ' ' + r.nombre + ' ' + r.redes).toLowerCase();
+          var dot  = '#34d399';
+          if (txt.indexOf('rotura') >= 0 || txt.indexOf('falla') >= 0 || txt.indexOf('desgarro') >= 0 || txt.indexOf('crítica') >= 0) dot = '#f87171';
+          else if (txt.indexOf('biofouling') >= 0 || txt.indexOf('depredador') >= 0 || txt.indexOf('desgaste') >= 0 || r.puerto === 'Cerrado') dot = '#fbbf24';
+          var desc = (f.observacion || r.nombre || r.redes || 'Inspección').substring(0, 38);
+          var bg   = isCurrent ? 'rgba(6,182,212,0.15)' : 'transparent';
+          var bdr  = isCurrent ? '1px solid rgba(6,182,212,0.4)' : '1px solid transparent';
+          var clk  = (f && f.id) ? 'openDrawerForReport(\'' + r.id + '\', \'' + f.id + '\')' : 'openDrawerForReport(\'' + r.id + '\')';
+          var he   = 'onmouseenter="this.style.background=\'rgba(255,255,255,0.06)\'" onmouseleave="this.style.background=\'' + bg + '\'"';
+          var activeLabel = isCurrent ? '<p style="margin:0;font-size:9px;font-weight:700;color:#22d3ee;">\u25cf Activo</p>' : '';
+          
+          html += '<div onclick="' + clk + '" ' + he + ' style="display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:10px;background:' + bg + ';border:' + bdr + ';cursor:pointer;transition:background .15s;box-sizing:border-box;">';
+          html += '<div style="width:8px;height:8px;min-width:8px;border-radius:50%;background:' + dot + ';box-shadow:0 0 5px ' + dot + '99;flex-shrink:0;"></div>';
+          html += '<div style="flex:1;min-width:0;overflow:hidden;">';
+          html += '<p style="margin:0;font-size:12px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">M\u00f3dulo ' + cage + '</p>';
+          html += '<p style="margin:0;font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + desc + '</p>';
+          html += '</div>';
+          html += '<div style="flex-shrink:0;text-align:right;min-width:60px;">' + activeLabel + '<p style="margin:0;font-size:10px;color:#475569;font-family:monospace;">' + (r.fecha || '\u2014') + '</p></div>';
+          html += '</div>';
+        });
+      });
+      lc.innerHTML = html;
+    }
+
+    function openFirstOrCalendarDrawer() {
+      if (allReports && allReports.length > 0) {
+        if (!activeReportId) {
+          const firstFindingId = (allReports[0].findings && allReports[0].findings[0]) ? allReports[0].findings[0].id : null;
+          openDrawerForReport(allReports[0].id, firstFindingId);
+        } else {
+          document.getElementById('drawer').classList.remove('translate-x-full');
+        }
+      }
     }
 
     function closeDrawer() {
@@ -1030,17 +2039,37 @@
 
       inputEl.value = ''; // Clear input
 
-      const cageId = detectCageId(report) || 'General';
-      const systemPrompt = `Eres el Asistente de Inteligencia Artificial de SUBVISION, plataforma desarrollada por SERVIROV. Tu especialidad es asesorar a pilotos de ROV, buzos y supervisores en la reparación, mantenimiento e interpretación de incidentes técnicos en jaulas acuícolas.
+      const cageId = (detectCageId(report) || '103').replace('Jaula ', '');
+      const reportFindings = report.findings || [
+        {
+          id: 'f-fallback',
+          jaula: cageId,
+          seccion: 'Fondo',
+          clasificacion: (report.nombre + ' ' + report.redes).toLowerCase().includes('rotura') ? 'Rotura de Red' : 'Sin Hallazgos',
+          observacion: report.redes || report.nombre,
+          profundidad: '15 metros'
+        }
+      ];
+
+      let findingsListText = '';
+      reportFindings.forEach((f, idx) => {
+        findingsListText += `\n[Hallazgo #${idx + 1}]
+- Módulo/Jaula: ${f.jaula}
+- Sección Red: ${f.seccion}
+- Clasificación: ${f.clasificacion}
+- Profundidad: ${f.profundidad}
+- Detalle Técnico: ${f.observacion}`;
+      });
+
+      const systemPrompt = `Eres el Asistente de Inteligencia Artificial de SUBVISION, plataforma desarrollada por SERVIROV. Tu especialidad es asesorar a pilotos de ROV, buzos y supervisores en la reparación, mantenimiento e interpretación de incidentes técnicos en módulos acuícolas.
       
 A continuación se detallan los datos del reporte seleccionado en 3D:
-- Jaula: ${cageId}
 - Piloto/Inspector: ${report.piloto}
 - Fecha: ${report.fecha}
 - Jefe de Centro: ${report.jefeCentro}
-- Detalle del incidente: ${report.nombre} - ${report.redes}
-
-Responde la pregunta del operador de manera técnica, ultra-directa y concisa (máximo 3 párrafos cortos). Usa viñetas si es necesario y mantén un tono profesional industrial.`;
+- Listado de Hallazgos: ${findingsListText}
+ 
+Responde la pregunta del operador de manera técnica, ultra-directa y concisa (máximo 3 párrafos cortos). Usa viñetas si es necesario y mantén un tono profesional industrial. Al finalizar tu respuesta, debes preguntarle siempre al usuario al final del texto: "¿Quieres enviar un informe?".`;
 
       // ✅ Proxy seguro — la API key permanece en el servidor, nunca llega al navegador
       try {
@@ -1082,7 +2111,263 @@ Responde la pregunta del operador de manera técnica, ultra-directa y concisa (m
       }
     }
 
+    function triggerVisorWhatsAppAlert(reportTitle, cageId) {
+      const modal = document.getElementById('visor-wa-modal');
+      const messagesContainer = document.getElementById('visor-wa-messages');
+      if (!modal || !messagesContainer) return;
+
+      const dateStr = new Date().toLocaleTimeString().substring(0, 5);
+      const text = `🚨 *ALERTA SUBVISION - SERVIROV* 🚨\n⚠️ *ESTADO:* ROTURA CRÍTICA DETECTADA\n📍 *UBICACIÓN:* MÓDULO ${cageId} (${reportTitle})\n⏱️ *HORA REGISTRO:* ${dateStr}\n⚙️ *ACCIÓN REQUERIDA:* REVISIÓN URGENTE EN TERRENO CON ROV`;
+
+      // Render the WhatsApp bubble
+      messagesContainer.innerHTML = `
+        <div style="align-self:center;background:rgba(11,20,26,0.5);color:#8696a0;font-size:9px;padding:4px 8px;border-radius:8px;margin-bottom:8px;font-family:sans-serif;">Hoy</div>
+        <div style="align-self:flex-start;background:#202c33;color:#e9edef;font-size:11px;padding:10px 12px;border-radius:0 12px 12px 12px;max-width:85%;line-height:1.4;box-shadow:0 1px 2px rgba(0,0,0,0.15);white-space:pre-wrap;font-family:sans-serif;">${text}<span style="float:right;font-size:8px;color:#8696a0;margin-top:6px;margin-left:8px;">${dateStr}</span></div>
+      `;
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeVisorWaModal() {
+      const modal = document.getElementById('visor-wa-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function getActiveUserEmail() {
+      const savedUser = localStorage.getItem('subvision_current_user');
+      let email = 'operador@servirov.cl';
+      if (savedUser) {
+        try {
+          email = JSON.parse(savedUser).email;
+        } catch {}
+      }
+      return email;
+    }
+
+    function openAddFindingModal() {
+      const modal = document.getElementById('add-finding-modal');
+      if (!modal) return;
+      
+      const dateInput = document.getElementById('form-finding-date');
+      if (dateInput) {
+        dateInput.value = '2026-07-21';
+      }
+      
+      const descInput = document.getElementById('form-finding-observacion');
+      if (descInput) descInput.value = '';
+      
+      const depthInput = document.getElementById('form-finding-profundidad');
+      if (depthInput) depthInput.value = '15 metros';
+      
+      document.getElementById('form-finding-jaula').value = '103';
+      document.getElementById('form-finding-seccion').value = 'Fondo';
+      document.getElementById('form-finding-clasificacion').value = 'Sin Hallazgos';
+      document.getElementById('form-finding-foto').value = '/report_ins301.png';
+      
+      modal.classList.remove('hidden');
+    }
+
+    function closeAddFindingModal() {
+      const modal = document.getElementById('add-finding-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function onFormClasificacionChange(val) {
+      const photoSelect = document.getElementById('form-finding-foto');
+      const descTextarea = document.getElementById('form-finding-observacion');
+      
+      if (val === 'Rotura de Red') {
+        if (photoSelect) photoSelect.value = '/report_pecera409.jpg';
+        if (descTextarea && !descTextarea.value) descTextarea.value = 'Se detecta rotura de malla pecera con desgarro vertical en fondo.';
+      } else if (val === 'Sobretensión Fondeo') {
+        if (photoSelect) photoSelect.value = '/report_ins311.png';
+        if (descTextarea && !descTextarea.value) descTextarea.value = 'Tensión inusual registrada en anclaje durante corriente fuerte.';
+      } else if (val === 'Biofouling pesado') {
+        if (photoSelect) photoSelect.value = '/report_ins311.png';
+        if (descTextarea && !descTextarea.value) descTextarea.value = 'Adherencia de algas y briozoos pesado en paño de malla.';
+      } else {
+        if (photoSelect) photoSelect.value = '/report_ins301.png';
+        if (descTextarea && descTextarea.value.includes('detecta')) descTextarea.value = '';
+      }
+    }
+
+    async function saveFindingFromVisor() {
+      const dateVal = document.getElementById('form-finding-date').value;
+      const jaulaVal = document.getElementById('form-finding-jaula').value;
+      const seccionVal = document.getElementById('form-finding-seccion').value;
+      const clasificacionVal = document.getElementById('form-finding-clasificacion').value;
+      const profundidadVal = document.getElementById('form-finding-profundidad').value || '15 metros';
+      const observacionVal = document.getElementById('form-finding-observacion').value || 'Inspección de malla sin hallazgos estructurales.';
+      const fotoVal = document.getElementById('form-finding-foto').value;
+      
+      if (!dateVal) {
+        alert('Por favor ingrese una fecha válida.');
+        return;
+      }
+
+      const email = getActiveUserEmail();
+      
+      let userReports = [];
+      const saved = localStorage.getItem(`subvision_rov_reports_${email}`);
+      if (saved) {
+        try {
+          userReports = JSON.parse(saved);
+        } catch {}
+      } else {
+        userReports = [...initialRovReportsFallback];
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCenterId = urlParams.get('center') || 'centro-pilpilehue';
+      
+      let report = userReports.find(r => r.fecha === dateVal && r.centroId === urlCenterId);
+      
+      const newFinding = {
+        id: 'f-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+        jaula: jaulaVal,
+        seccion: seccionVal,
+        clasificacion: clasificacionVal,
+        observacion: observacionVal,
+        fotoUrl: fotoVal,
+        profundidad: profundidadVal
+      };
+
+      if (report) {
+        if (!report.findings) report.findings = [];
+        report.findings.push(newFinding);
+        if (clasificacionVal === 'Rotura de Red') {
+          report.nombre = 'ROTURA CRÍTICA DE MALLA JAULA ' + jaulaVal;
+          report.puerto = 'Cerrado';
+        }
+        report.redes = `Inspección diaria (${report.findings.length} hallazgos registrados)`;
+      } else {
+        const isCritical = (clasificacionVal === 'Rotura de Red');
+        report = {
+          id: 'r-' + Date.now(),
+          fecha: dateVal,
+          nombre: isCritical ? 'ROTURA CRÍTICA DE MALLA JAULA ' + jaulaVal : 'INSPECCIÓN DE INTEGRIDAD MÓDULOS',
+          jefeCentro: 'Andrés Mansilla',
+          piloto: (savedUser ? (JSON.parse(savedUser).name || 'Cristian Barcena Córdova') : 'Cristian Barcena Córdova (Piloto ROV)'),
+          empresa: 'SERVIROV',
+          puerto: isCritical ? 'Cerrado' : 'Abierto',
+          redes: `RED PECERA (Inspección general, 1 hallazgo registrado)`,
+          centroId: urlCenterId,
+          userEmail: email,
+          findings: [newFinding]
+        };
+        userReports.unshift(report);
+      }
+
+      localStorage.setItem(`subvision_rov_reports_${email}`, JSON.stringify(userReports));
+
+      try {
+        if (typeof supabaseClient !== 'undefined') {
+          await supabaseClient
+            .from('rov_reports')
+            .upsert({
+              id: report.id.startsWith('r-') ? undefined : report.id,
+              fecha: report.fecha,
+              nombre: report.nombre,
+              jefe_centro: report.jefeCentro,
+              piloto: report.piloto,
+              empresa: report.empresa,
+              puerto: report.puerto,
+              redes: report.redes,
+              user_email: email,
+              centro_id: urlCenterId
+            });
+        }
+      } catch (err) {
+        console.warn("Failed to push to Supabase:", err);
+      }
+
+      closeAddFindingModal();
+      alert('¡Hallazgo guardado correctamente! El calendario y el mapa 3D se recargarán.');
+      location.reload();
+    }
+
     window.onload = init;
   </script>
+  <!-- Modern Modal for Adding Findings -->
+  <div id="add-finding-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/80 backdrop-blur-xs hidden p-4">
+    <div class="bg-[#0b1329]/95 text-slate-100 rounded-xl border border-cyan-500/20 w-full max-w-sm overflow-hidden flex flex-col relative font-sans shadow-2xl animate-scale-in">
+      <div class="bg-slate-950/40 px-4 py-3 flex items-center justify-between border-b border-cyan-500/10">
+        <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-widest font-mono">Registrar Nuevo Hallazgo</span>
+        <button onclick="closeAddFindingModal()" class="p-1 rounded-full text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors cursor-pointer border-none bg-transparent">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-4 space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-400 font-bold mb-1 text-[9px] uppercase tracking-wider">Fecha de Hallazgo</label>
+          <input type="date" id="form-finding-date" class="w-full bg-slate-950/40 border border-cyan-500/10 focus:border-cyan-500/30 rounded-lg px-2.5 py-1.5 outline-none text-slate-200 transition-all font-mono" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 font-bold mb-1 text-[9px] uppercase tracking-wider">Módulo / Jaula</label>
+            <select id="form-finding-jaula" class="w-full bg-slate-950/40 border border-cyan-500/10 focus:border-cyan-500/30 rounded-lg px-2.5 py-1.5 outline-none text-slate-200 transition-all">
+              <option value="101" style="background:#0b1329;">Módulo 101</option>
+              <option value="102" style="background:#0b1329;">Módulo 102</option>
+              <option value="103" style="background:#0b1329;">Módulo 103</option>
+              <option value="104" style="background:#0b1329;">Módulo 104</option>
+              <option value="105" style="background:#0b1329;">Módulo 105</option>
+              <option value="106" style="background:#0b1329;">Módulo 106</option>
+              <option value="107" style="background:#0b1329;">Módulo 107</option>
+              <option value="108" style="background:#0b1329;">Módulo 108</option>
+              <option value="109" style="background:#0b1329;">Módulo 109</option>
+              <option value="110" style="background:#0b1329;">Módulo 110</option>
+              <option value="111" style="background:#0b1329;">Módulo 111</option>
+              <option value="112" style="background:#0b1329;">Módulo 112</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 font-bold mb-1 text-[9px] uppercase tracking-wider">Sección Red</label>
+            <select id="form-finding-seccion" class="w-full bg-slate-950/40 border border-cyan-500/10 focus:border-cyan-500/30 rounded-lg px-2.5 py-1.5 outline-none text-slate-200 transition-all">
+              <option value="Fondo" style="background:#0b1329;">Fondo</option>
+              <option value="Lateral" style="background:#0b1329;">Lateral</option>
+              <option value="Flotador" style="background:#0b1329;">Flotador</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 font-bold mb-1 text-[9px] uppercase tracking-wider">Clasificación</label>
+            <select id="form-finding-clasificacion" onchange="onFormClasificacionChange(this.value)" class="w-full bg-slate-950/40 border border-cyan-500/10 focus:border-cyan-500/30 rounded-lg px-2.5 py-1.5 outline-none text-slate-200 transition-all">
+              <option value="Sin Hallazgos" style="background:#0b1329;">Sin Hallazgos</option>
+              <option value="Rotura de Red" style="background:#0b1329;">Rotura de Red (Crítico)</option>
+              <option value="Sobretensión Fondeo" style="background:#0b1329;">Sobretensión Fondeo</option>
+              <option value="Biofouling pesado" style="background:#0b1329;">Biofouling pesado</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 font-bold mb-1 text-[9px] uppercase tracking-wider">Profundidad</label>
+            <input type="text" id="form-finding-profundidad" placeholder="Ej: 15 metros" class="w-full bg-slate-950/40 border border-cyan-500/10 focus:border-cyan-500/30 rounded-lg px-2.5 py-1.5 outline-none text-slate-200 transition-all placeholder:text-slate-650" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-bold mb-1 text-[9px] uppercase tracking-wider">Descripción del Hallazgo</label>
+          <textarea id="form-finding-observacion" rows="3" placeholder="Detalle técnico observado..." class="w-full bg-slate-950/40 border border-cyan-500/10 focus:border-cyan-500/30 rounded-lg px-2.5 py-1.5 outline-none text-slate-200 transition-all resize-none placeholder:text-slate-650"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-bold mb-1 text-[9px] uppercase tracking-wider">Fotografía Asociada</label>
+          <select id="form-finding-foto" class="w-full bg-slate-950/40 border border-cyan-500/10 focus:border-cyan-500/30 rounded-lg px-2.5 py-1.5 outline-none text-slate-200 transition-all">
+            <option value="/report_ins301.png" style="background:#0b1329;">Cabo / Estructura (Verde)</option>
+            <option value="/report_j303.png" style="background:#0b1329;">Conector / Malla (Verde)</option>
+            <option value="/report_ins311.png" style="background:#0b1329;">Biofouling / Fondeo (Amarillo)</option>
+            <option value="/report_pecera409.jpg" style="background:#0b1329;">Rotura / Desgarro (Rojo)</option>
+          </select>
+        </div>
+
+        <button onclick="saveFindingFromVisor()" class="w-full mt-2 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-slate-950 font-black rounded-lg transition-all border-none cursor-pointer">
+          Guardar Hallazgo
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

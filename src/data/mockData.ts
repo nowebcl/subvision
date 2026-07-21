@@ -66,6 +66,22 @@ export const initialUsersList = [
     role: 'admin',
     avatar: 'AG',
     company: 'SERVIROV'
+  },
+  {
+    email: 'piloto@servirov.cl',
+    password: 'ClavePiloto123!',
+    name: 'Cristian Barcena Córdova (Piloto ROV)',
+    role: 'Piloto ROV',
+    avatar: 'CB',
+    company: 'SERVIROV'
+  },
+  {
+    email: 'cliente@servirov.cl',
+    password: 'ClaveCliente123!',
+    name: 'CLIENTE',
+    role: 'Cliente',
+    avatar: 'CL',
+    company: 'SalmonChile / MultiX / Camanchaca'
   }
 ];
 
@@ -84,12 +100,9 @@ export const aquacultureCenters: AquacultureCenter[] = [
       currentSpeed: 1.2
     },
     cages: [
-      { id: 'h-101', name: 'Jaula 101', species: 'Salmón Atlántico', count: 45000, avgWeightKg: 4.2, biomassTons: 189, netIntegrity: 98.4, mooringTensionKn: 42.1, lastCleaned: '2026-07-01', status: 'optimal' },
-      { id: 'h-102', name: 'Jaula 102', species: 'Salmón Atlántico', count: 43500, avgWeightKg: 4.3, biomassTons: 187, netIntegrity: 96.1, mooringTensionKn: 39.8, lastCleaned: '2026-07-02', status: 'optimal' },
-      { id: 'h-103', name: 'Jaula 103', species: 'Salmón Atlántico', count: 46000, avgWeightKg: 4.1, biomassTons: 188.6, netIntegrity: 82.5, mooringTensionKn: 68.3, lastCleaned: '2026-06-15', status: 'warning' },
-      { id: 'h-104', name: 'Jaula 104', species: 'Salmón Atlántico', count: 44000, avgWeightKg: 4.5, biomassTons: 198, netIntegrity: 95.7, mooringTensionKn: 41.5, lastCleaned: '2026-07-03', status: 'optimal' },
-      { id: 'h-105', name: 'Jaula 105', species: 'Salmón Atlántico', count: 42000, avgWeightKg: 4.6, biomassTons: 193.2, netIntegrity: 74.2, mooringTensionKn: 94.5, lastCleaned: '2026-05-20', status: 'critical' },
-      { id: 'h-106', name: 'Jaula 106', species: 'Salmón Atlántico', count: 45500, avgWeightKg: 4.0, biomassTons: 182, netIntegrity: 99.1, mooringTensionKn: 38.2, lastCleaned: '2026-07-06', status: 'optimal' }
+      { id: 'h-101', name: 'Módulo 101', species: 'Salmón Atlántico', count: 45000, avgWeightKg: 4.2, biomassTons: 189, netIntegrity: 98.4, mooringTensionKn: 42.1, lastCleaned: '2026-07-01', status: 'optimal' },
+      { id: 'h-102', name: 'Módulo 102', species: 'Salmón Atlántico', count: 43500, avgWeightKg: 4.3, biomassTons: 187, netIntegrity: 96.1, mooringTensionKn: 39.8, lastCleaned: '2026-07-02', status: 'optimal' },
+      { id: 'h-103', name: 'Módulo 103', species: 'Salmón Atlántico', count: 42000, avgWeightKg: 4.6, biomassTons: 193.2, netIntegrity: 74.2, mooringTensionKn: 148.9, lastCleaned: '2026-05-20', status: 'critical' }
     ],
     mooringLines: [
       { id: 'm-h1', code: 'Línea de Fondeo A1', tensionKn: 85.3, limitKn: 120.0, angle: 45, status: 'optimal' },
@@ -130,10 +143,9 @@ export const aquacultureCenters: AquacultureCenter[] = [
       currentSpeed: 1.8
     },
     cages: [
-      { id: 'a-201', name: 'Jaula 201', species: 'Trucha Arcoíris', count: 50000, avgWeightKg: 2.8, biomassTons: 140, netIntegrity: 99.0, mooringTensionKn: 55.4, lastCleaned: '2026-07-04', status: 'optimal' },
-      { id: 'a-202', name: 'Jaula 202', species: 'Trucha Arcoíris', count: 49500, avgWeightKg: 2.9, biomassTons: 143.5, netIntegrity: 98.2, mooringTensionKn: 53.1, lastCleaned: '2026-07-05', status: 'optimal' },
-      { id: 'a-203', name: 'Jaula 203', species: 'Trucha Arcoíris', count: 51000, avgWeightKg: 2.7, biomassTons: 137.7, netIntegrity: 91.3, mooringTensionKn: 72.8, lastCleaned: '2026-06-28', status: 'optimal' },
-      { id: 'a-204', name: 'Jaula 204', species: 'Trucha Arcoíris', count: 48000, avgWeightKg: 3.1, biomassTons: 148.8, netIntegrity: 89.5, mooringTensionKn: 85.2, lastCleaned: '2026-06-25', status: 'warning' }
+      { id: 'a-301', name: 'Módulo 301', species: 'Trucha Arcoíris', count: 50000, avgWeightKg: 2.8, biomassTons: 140, netIntegrity: 99.0, mooringTensionKn: 55.4, lastCleaned: '2026-07-04', status: 'optimal' },
+      { id: 'a-302', name: 'Módulo 302', species: 'Trucha Arcoíris', count: 49500, avgWeightKg: 2.9, biomassTons: 143.5, netIntegrity: 98.2, mooringTensionKn: 53.1, lastCleaned: '2026-07-05', status: 'optimal' },
+      { id: 'a-303', name: 'Módulo 303', species: 'Trucha Arcoíris', count: 48000, avgWeightKg: 3.1, biomassTons: 148.8, netIntegrity: 74.2, mooringTensionKn: 135.2, lastCleaned: '2026-06-25', status: 'critical' }
     ],
     mooringLines: [
       { id: 'm-a1', code: 'Línea de Fondeo C1', tensionKn: 98.1, limitKn: 150.0, angle: 45, status: 'optimal' },
@@ -174,10 +186,9 @@ export const aquacultureCenters: AquacultureCenter[] = [
       currentSpeed: 2.1
     },
     cages: [
-      { id: 'q-301', name: 'Jaula 301', species: 'Salmón Coho', count: 60000, avgWeightKg: 3.5, biomassTons: 210, netIntegrity: 97.8, mooringTensionKn: 78.4, lastCleaned: '2026-07-02', status: 'optimal' },
-      { id: 'q-302', name: 'Jaula 302', species: 'Salmón Coho', count: 58500, avgWeightKg: 3.6, biomassTons: 210.6, netIntegrity: 98.5, mooringTensionKn: 74.6, lastCleaned: '2026-07-03', status: 'optimal' },
-      { id: 'q-303', name: 'Jaula 303', species: 'Salmón Coho', count: 59000, avgWeightKg: 3.4, biomassTons: 200.6, netIntegrity: 93.2, mooringTensionKn: 88.9, lastCleaned: '2026-06-29', status: 'optimal' },
-      { id: 'q-304', name: 'Jaula 304', species: 'Salmón Coho', count: 61000, avgWeightKg: 3.3, biomassTons: 201.3, netIntegrity: 79.1, mooringTensionKn: 122.4, lastCleaned: '2026-06-18', status: 'critical' }
+      { id: 'q-401', name: 'Módulo 401', species: 'Salmón Coho', count: 60000, avgWeightKg: 3.5, biomassTons: 210, netIntegrity: 97.8, mooringTensionKn: 78.4, lastCleaned: '2026-07-02', status: 'optimal' },
+      { id: 'q-402', name: 'Módulo 402', species: 'Salmón Coho', count: 58500, avgWeightKg: 3.6, biomassTons: 210.6, netIntegrity: 98.5, mooringTensionKn: 74.6, lastCleaned: '2026-07-03', status: 'optimal' },
+      { id: 'q-403', name: 'Módulo 403', species: 'Salmón Coho', count: 61000, avgWeightKg: 3.3, biomassTons: 201.3, netIntegrity: 74.2, mooringTensionKn: 162.4, lastCleaned: '2026-06-18', status: 'critical' }
     ],
     mooringLines: [
       { id: 'm-q1', code: 'Línea de Fondeo E1', tensionKn: 110.2, limitKn: 180.0, angle: 45, status: 'optimal' },
@@ -221,7 +232,7 @@ export const initialAlerts: SystemAlert[] = [
   {
     id: 'alert-1',
     centerId: 'centro-pilpilehue',
-    source: 'Jaula 105',
+    source: 'Módulo 103',
     type: 'integrity',
     message: 'Integridad de malla degradada por debajo del umbral mínimo de seguridad (74.2%)',
     severity: 'critical',
@@ -241,19 +252,19 @@ export const initialAlerts: SystemAlert[] = [
   {
     id: 'alert-3',
     centerId: 'centro-apiao',
-    source: 'Jaula 204',
+    source: 'Módulo 203',
     type: 'integrity',
-    message: 'Nivel de integridad de malla disminuyendo (89.5%)',
-    severity: 'warning',
+    message: 'Nivel de integridad de malla en nivel crítico (74.2%)',
+    severity: 'critical',
     timestamp: 'Hace 45 min',
     acknowledged: false
   },
   {
     id: 'alert-4',
     centerId: 'centro-quellon',
-    source: 'Jaula 304',
+    source: 'Módulo 303',
     type: 'integrity',
-    message: 'Integridad de malla en nivel de alerta crítica (79.1%)',
+    message: 'Integridad de malla en nivel de alerta crítica (74.2%)',
     severity: 'critical',
     timestamp: 'Hace 1 hora',
     acknowledged: false

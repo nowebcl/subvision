@@ -162,14 +162,14 @@ export const InspectionChecklistView: React.FC = () => {
 
               {/* Cage Select */}
               <div className="space-y-2">
-                <label className="text-slate-600 font-semibold uppercase tracking-wider">Jaula a Evaluar</label>
+                <label className="text-slate-600 font-semibold uppercase tracking-wider">Módulo a Evaluar</label>
                 <select
                   value={cageId}
                   onChange={(e) => setCageId(e.target.value)}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:bg-white transition-all text-xs cursor-pointer"
                 >
                   {selectedCenter.cages.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.species})</option>
+                    <option key={c.id} value={c.id}>{c.name.replace('Jaula', 'Módulo')} ({c.species})</option>
                   ))}
                 </select>
               </div>
@@ -308,7 +308,7 @@ export const InspectionChecklistView: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 font-medium">
                     <div>Centro: <span className="text-slate-700 font-semibold">{selectedCenter.name}</span></div>
-                    <div>Jaula: <span className="text-slate-700 font-semibold">{log.cageId.toUpperCase()}</span></div>
+                    <div>Módulo: <span className="text-slate-700 font-semibold">{log.cageId.toUpperCase()}</span></div>
                     <div>Malla: <span className="text-slate-700 font-semibold">{log.netCleanliness}%</span></div>
                     <div>Grilletes: <span className="text-slate-700 font-semibold">{log.shackleCheck ? 'OK' : 'Defectuoso'}</span></div>
                   </div>

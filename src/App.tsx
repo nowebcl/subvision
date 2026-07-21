@@ -5,12 +5,13 @@ import { Header } from './components/shared/Header';
 import { Sidebar } from './components/shared/Sidebar';
 import { DashboardView } from './views/DashboardView';
 import { InstallationsView } from './views/InstallationsView';
-import { InspectionChecklistView } from './views/InspectionChecklistView';
+import { FindingsView } from './views/FindingsView';
 import { MultimodalAIView } from './views/MultimodalAIView';
-import { RealTimeVideoAIView } from './views/RealTimeVideoAIView';
 import { WhatsAppAutomationsView } from './views/WhatsAppAutomationsView';
 import { WhatsAppSimulationView } from './views/WhatsAppSimulationView';
 import { AIChatbotWidget } from './components/shared/AIChatbotWidget';
+import { PhoneAlertModal } from './components/shared/PhoneAlertModal';
+import { EmailPreviewModal } from './components/shared/EmailPreviewModal';
 
 const AppContent: React.FC = () => {
   const { currentUser, currentView } = useApp();
@@ -26,11 +27,10 @@ const AppContent: React.FC = () => {
       case 'dashboard':
         return <DashboardView />;
       case 'installations':
-        return <InstallationsView />;
-      case 'video-ai':
-        return <RealTimeVideoAIView />;
-      case 'checklist':
-        return <InspectionChecklistView />;
+        const canAccessInstallations = currentUser.role === 'Cliente' || currentUser.role === 'admin' || currentUser.email === 'cliente@servirov.cl' || currentUser.email === 'admin@servirov.cl';
+        return canAccessInstallations ? <InstallationsView /> : <DashboardView />;
+      case 'findings':
+        return <FindingsView />;
       case 'multimodal':
         return <MultimodalAIView />;
       case 'whatsapp-rules':
@@ -52,6 +52,8 @@ const AppContent: React.FC = () => {
         </main>
       </div>
       <AIChatbotWidget />
+      <PhoneAlertModal />
+      <EmailPreviewModal />
     </div>
   );
 };
