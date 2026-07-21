@@ -391,6 +391,8 @@ export interface AppContextType {
   logActivity: (action: string, target: string) => void;
   activeTab: 'telemetry' | 'rov' | 'structures' | 'admin' | 'cliente';
   setActiveTab: React.Dispatch<React.SetStateAction<'telemetry' | 'rov' | 'structures' | 'admin' | 'cliente'>>;
+  selectedCageId: string;
+  setSelectedCageId: (id: string) => void;
   isPhoneModalOpen: boolean;
   setIsPhoneModalOpen: (open: boolean) => void;
   phoneModalMessage: string;
@@ -428,42 +430,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser]);
 
-  const [currentView, setCurrentView] = useState<string>('dashboard');
+  const [currentView, setCurrentView] = useState<string>(() => {
+    const saved = localStorage.getItem('subvision_current_view');
+    return saved || 'dashboard';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('subvision_current_view', currentView);
+  }, [currentView]);
+
   const [activeTab, setActiveTab] = useState<'telemetry' | 'rov' | 'structures' | 'admin' | 'cliente'>('rov');
+
+  const [selectedCageId, setSelectedCageId] = useState<string>(() => {
+    return localStorage.getItem('subvision_selected_cage_id') || 'h-101';
+  });
+
+  useEffect(() => {
+    if (selectedCageId) {
+      localStorage.setItem('subvision_selected_cage_id', selectedCageId);
+    }
+  }, [selectedCageId]);
 
   const [centers, setCenters] = useState<AquacultureCenter[]>(() => {
     const saved = localStorage.getItem('subvision_centers');
+    let loaded = aquacultureCenters;
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        
-        // Force migration reset if we have more than 3 cages in Pilpilehue
-        const pilp = parsed.find((c: any) => c.id === 'centro-pilpilehue');
-        if (pilp && pilp.cages.length > 3) {
-          localStorage.setItem('subvision_centers', JSON.stringify(aquacultureCenters));
-          return aquacultureCenters;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          loaded = parsed.filter((c: any) => c.id !== 'centro-huito');
         }
-
-        // Clean any cached 'centro-huito' and replace with 'centro-pilpilehue'
-        const cleaned = parsed.map((c: any) => {
-          if (c.id === 'centro-huito') {
-            const pilpilehueDefault = aquacultureCenters.find(ac => ac.id === 'centro-pilpilehue');
-            return pilpilehueDefault || c;
-          }
-          return c;
-        }).filter((c: any) => c.id !== 'centro-huito');
-        
-        // Ensure centro-pilpilehue is present
-        if (!cleaned.some((c: any) => c.id === 'centro-pilpilehue')) {
-          const pilpilehueDefault = aquacultureCenters.find(ac => ac.id === 'centro-pilpilehue');
-          if (pilpilehueDefault) cleaned.unshift(pilpilehueDefault);
-        }
-        return cleaned;
-      } catch {
-        return aquacultureCenters;
-      }
+      } catch {}
     }
-    return aquacultureCenters;
+    // Always hydrate with latest nets and reportSummary from aquacultureCenters defaults
+    return loaded.map(c => {
+      const defaultCenter = aquacultureCenters.find(ac => ac.id === c.id);
+      return {
+        ...c,
+        cages: c.cages.map(cage => {
+          const defaultCage = defaultCenter?.cages.find(dc => dc.id === cage.id);
+          return {
+            ...defaultCage,
+            ...cage,
+            netsCount: cage.netsCount || defaultCage?.netsCount || (cage.nets ? cage.nets.length : 3),
+            nets: (cage.nets && cage.nets.length > 0) ? cage.nets : (defaultCage?.nets || []),
+            reportSummary: cage.reportSummary || defaultCage?.reportSummary
+          };
+        })
+      };
+    });
   });
 
   // Filter centers list based on logged in user role and assignments
@@ -1496,6 +1511,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       logActivity,
       activeTab,
       setActiveTab,
+      selectedCageId,
+      setSelectedCageId,
       isPhoneModalOpen,
       setIsPhoneModalOpen,
       phoneModalMessage,

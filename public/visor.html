@@ -255,26 +255,72 @@
 
   <!-- Visor WhatsApp Simulator Modal -->
   <div id="visor-wa-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="relative w-[360px] h-[580px] bg-[#0b141a] rounded-[24px] border border-white/10 flex flex-col overflow-hidden shadow-2xl">
-      <!-- Phone Header -->
-      <div class="bg-[#075e54] p-3.5 text-white flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-full bg-[#128c7e] flex items-center justify-center font-bold text-xs">SV</div>
-          <div>
-            <p class="margin-0 text-xs font-bold leading-none" style="margin:0;">SubVision Alertas</p>
-            <p class="margin-0 text-[9px] text-[#d1f4e6] leading-none mt-1" style="margin:5px 0 0 0;">En línea</p>
-          </div>
+    <div class="relative flex flex-col items-center">
+      
+      <!-- Smartphone Shell Mockup -->
+      <div class="w-[340px] h-[670px] bg-slate-950 rounded-[48px] p-3.5 shadow-2xl border-4 border-slate-700/80 relative flex flex-col overflow-hidden ring-2 ring-cyan-500/20">
+        
+        <!-- Bezel Dynamic Island / Notch -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-30 flex items-center justify-center gap-2 border border-slate-800">
+          <div class="w-2.5 h-2.5 bg-zinc-900 rounded-full"></div>
+          <div class="w-1.5 h-1.5 bg-cyan-900/60 rounded-full"></div>
         </div>
-        <button onclick="closeVisorWaModal()" class="bg-transparent border-none text-white text-base cursor-pointer font-bold px-2 py-1 hover:opacity-80">✕</button>
+
+        <!-- Screen Container -->
+        <div class="flex-1 rounded-[38px] bg-[#efeae2] flex flex-col overflow-hidden relative font-sans">
+          
+          <!-- Phone Status Bar -->
+          <div class="h-9 bg-[#075e54] text-white px-6 pt-2.5 flex justify-between items-center text-[10px] font-mono font-semibold z-20 select-none">
+            <span id="visor-wa-clock">19:42</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[9px] font-bold">5G</span>
+              <div class="w-4 h-2 bg-white rounded-xs"></div>
+            </div>
+          </div>
+
+          <!-- WhatsApp Verified Business Header -->
+          <div class="bg-[#075e54] text-white px-3 py-2.5 flex items-center justify-between shadow-md z-20 select-none border-b border-teal-800">
+            <div class="flex items-center gap-2.5">
+              <div class="relative rounded-full bg-white border border-teal-300 flex items-center justify-center overflow-hidden shrink-0 shadow-sm" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;">
+                <img src="/LOGO_CIRCULAR.png" alt="Servirov Logo" class="w-full h-full object-cover" style="width: 100%; height: 100%; max-width: 100%; max-height: 100%; display: block;" />
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-1">
+                  <h4 class="font-bold text-xs leading-tight tracking-tight m-0 text-white">SERVIROV Operaciones</h4>
+                  <span class="bg-emerald-400 text-teal-950 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black" title="Cuenta de Empresa Verificada">✓</span>
+                </div>
+                <span id="visor-wa-status" class="text-[8px] text-teal-100/90 leading-none block mt-0.5">Cuenta de Empresa • En línea</span>
+              </div>
+            </div>
+            
+            <button onclick="closeVisorWaModal()" class="bg-teal-800/80 hover:bg-teal-700 text-white border border-teal-600 rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer transition-all">✕ Cerrar</button>
+          </div>
+
+          <!-- Chat Messages Body -->
+          <div id="visor-wa-messages" class="flex-1 p-3 overflow-y-auto space-y-3 relative flex flex-col bg-[#efeae2]">
+            <!-- Messages rendered dynamically -->
+          </div>
+
+          <!-- WhatsApp Footer Input Bar -->
+          <form onsubmit="handleVisorWaSend(event)" class="p-2 bg-[#f0f2f5] flex items-center gap-2 border-t border-slate-200">
+            <input
+              id="visor-wa-input"
+              type="text"
+              placeholder="Escribe una respuesta en WhatsApp..."
+              class="flex-1 bg-white rounded-full px-3.5 py-1.5 text-xs text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-600"
+            />
+            <button
+              type="submit"
+              class="w-8 h-8 rounded-full bg-[#128c7e] hover:bg-[#075e54] text-white flex items-center justify-center shrink-0 shadow-sm cursor-pointer border-none font-bold text-xs"
+              title="Enviar mensaje"
+            >
+              ➔
+            </button>
+          </form>
+
+        </div>
       </div>
-      <!-- Messages area -->
-      <div id="visor-wa-messages" class="flex-1 p-4 overflow-y-auto flex flex-col gap-2 bg-[#0b141a]/95 bg-cover" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');">
-        <!-- Message will be dynamically written -->
-      </div>
-      <!-- Footer -->
-      <div class="bg-[#1f2c34] p-2.5 flex items-center gap-2.5 shrink-0">
-        <input readonly type="text" value="Mensaje enviado automáticamente" class="flex-1 bg-[#2a3942] border-none rounded-full px-3.5 py-2 text-[#8696a0] text-[10px] outline-none" />
-      </div>
+
     </div>
   </div>
 
@@ -2111,21 +2157,122 @@ Responde la pregunta del operador de manera técnica, ultra-directa y concisa (m
       }
     }
 
+    function playVisorWaPing() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      } catch {}
+    }
+
+    let currentVisorWaCageId = '103';
+
     function triggerVisorWhatsAppAlert(reportTitle, cageId) {
       const modal = document.getElementById('visor-wa-modal');
       const messagesContainer = document.getElementById('visor-wa-messages');
       if (!modal || !messagesContainer) return;
 
+      currentVisorWaCageId = cageId || '103';
       const dateStr = new Date().toLocaleTimeString().substring(0, 5);
-      const text = `🚨 *ALERTA SUBVISION - SERVIROV* 🚨\n⚠️ *ESTADO:* ROTURA CRÍTICA DETECTADA\n📍 *UBICACIÓN:* MÓDULO ${cageId} (${reportTitle})\n⏱️ *HORA REGISTRO:* ${dateStr}\n⚙️ *ACCIÓN REQUERIDA:* REVISIÓN URGENTE EN TERRENO CON ROV`;
+      const clockElem = document.getElementById('visor-wa-clock');
+      if (clockElem) clockElem.innerText = dateStr;
 
-      // Render the WhatsApp bubble
+      playVisorWaPing();
+
+      let photoUrl = '/report_pecera409.jpg';
+      if (String(cageId).includes('102')) photoUrl = '/report_ins311.png';
+      if (String(cageId).includes('101')) photoUrl = '/report_ins301.png';
+
       messagesContainer.innerHTML = `
-        <div style="align-self:center;background:rgba(11,20,26,0.5);color:#8696a0;font-size:9px;padding:4px 8px;border-radius:8px;margin-bottom:8px;font-family:sans-serif;">Hoy</div>
-        <div style="align-self:flex-start;background:#202c33;color:#e9edef;font-size:11px;padding:10px 12px;border-radius:0 12px 12px 12px;max-width:85%;line-height:1.4;box-shadow:0 1px 2px rgba(0,0,0,0.15);white-space:pre-wrap;font-family:sans-serif;">${text}<span style="float:right;font-size:8px;color:#8696a0;margin-top:6px;margin-left:8px;">${dateStr}</span></div>
+        <div style="align-self:center;background:rgba(255,255,255,0.8);color:#475569;font-size:9px;padding:3px 10px;border-radius:6px;font-weight:bold;margin:4px 0;font-family:sans-serif;box-shadow:0 1px 2px rgba(0,0,0,0.05);">HOY</div>
+        <div style="align-self:flex-start;background:#ffffff;color:#0f172a;font-size:11px;padding:12px;border-radius:0 14px 14px 14px;max-width:92%;line-height:1.45;box-shadow:0 2px 5px rgba(0,0,0,0.08);border-left:4px solid #ef4444;font-family:sans-serif;text-align:left;">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;padding-bottom:6px;margin-bottom:8px;">
+            <span style="color:#dc2626;font-weight:800;font-size:9px;letter-spacing:0.5px;">🚨 ALERTA SUBVISION - 3D VISOR</span>
+            <span style="background:#fee2e2;color:#991b1b;font-size:8px;font-weight:bold;padding:1px 5px;border-radius:4px;font-family:monospace;">URGENTE</span>
+          </div>
+
+          <div style="margin-bottom:10px;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;position:relative;">
+            <img src="${photoUrl}" alt="Registro ROV" style="width:100%;height:110px;object-fit:cover;display:block;" />
+            <div style="background:rgba(15,23,42,0.85);color:white;font-size:8px;font-family:monospace;padding:3px 8px;display:flex;justify-content:space-between;">
+              <span>📸 CAPTURA REGISTRO ROV</span>
+              <span style="color:#22d3ee;font-weight:bold;">MÓDULO ${cageId}</span>
+            </div>
+          </div>
+
+          <div style="space-y:4px;">
+            <p style="margin:0 0 4px 0;font-weight:bold;color:#0f172a;">🚨 ALERTA TÉCNICA MARÍTIMA 🚨</p>
+            <p style="margin:0 0 3px 0;">⚠️ <strong>ESTADO:</strong> ROTURA CRÍTICA DETECTADA</p>
+            <p style="margin:0 0 3px 0;">📍 <strong>UBICACIÓN:</strong> MÓDULO ${cageId} (${reportTitle})</p>
+            <p style="margin:0 0 3px 0;">⏱️ <strong>HORA REGISTRO:</strong> ${dateStr}</p>
+            <p style="margin:0;">⚙️ <strong>ACCIÓN REQUERIDA:</strong> REVISIÓN URGENTE EN TERRENO CON ROV</p>
+          </div>
+
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9;display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:8px;color:#94a3b8;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">Acciones Rápidas:</span>
+            <button onclick="handleVisorWaQuickReply('Requiero despachar cuadrilla de buceo a terreno inmediatamente.')" style="width:100%;padding:6px 8px;background:#f0fdf4;color:#166534;font-size:9.5px;font-weight:bold;border-radius:6px;border:1px solid #bbf7d0;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;">
+              <span>🛠️ Despachar Cuadrilla Buceo</span>
+              <span>→</span>
+            </button>
+            <button onclick="handleVisorWaQuickReply('Por favor contactar al Piloto ROV de guardia para revisión live.')" style="width:100%;padding:6px 8px;background:#f0fdf4;color:#166534;font-size:9.5px;font-weight:bold;border-radius:6px;border:1px solid #bbf7d0;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;">
+              <span>📞 Contactar Piloto ROV</span>
+              <span>→</span>
+            </button>
+          </div>
+
+          <div style="text-align:right;font-size:8px;color:#94a3b8;font-weight:bold;margin-top:6px;">${dateStr}</div>
+        </div>
       `;
 
       modal.classList.remove('hidden');
+    }
+
+    function handleVisorWaQuickReply(text) {
+      handleVisorWaSend(null, text);
+    }
+
+    function handleVisorWaSend(e, customText) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('visor-wa-input');
+      const text = customText || (input ? input.value : '');
+      if (!text || !text.trim()) return;
+
+      const container = document.getElementById('visor-wa-messages');
+      if (!container) return;
+
+      const dateStr = new Date().toLocaleTimeString().substring(0, 5);
+
+      // Render user message bubble
+      const userBubble = document.createElement('div');
+      userBubble.style.cssText = 'align-self:flex-end;background:#dcf8c6;color:#0f172a;font-size:10.5px;padding:8px 10px;border-radius:12px 0 12px 12px;max-width:85%;line-height:1.4;box-shadow:0 1px 3px rgba(0,0,0,0.06);font-family:sans-serif;text-align:left;margin-top:6px;';
+      userBubble.innerHTML = `${text}<div style="text-align:right;font-size:8px;color:#64748b;margin-top:3px;font-weight:bold;">${dateStr} ✓✓</div>`;
+      container.appendChild(userBubble);
+
+      if (input) input.value = '';
+      container.scrollTop = container.scrollHeight;
+
+      // Status indicator set to typing
+      const statusElem = document.getElementById('visor-wa-status');
+      if (statusElem) statusElem.innerText = 'escribiendo...';
+
+      setTimeout(() => {
+        playVisorWaPing();
+        if (statusElem) statusElem.innerText = 'Cuenta de Empresa • En línea';
+
+        const replyBubble = document.createElement('div');
+        replyBubble.style.cssText = 'align-self:flex-start;background:#ffffff;color:#0f172a;font-size:10.5px;padding:8px 10px;border-radius:0 12px 12px 12px;max-width:85%;line-height:1.4;box-shadow:0 1px 3px rgba(0,0,0,0.06);font-family:sans-serif;text-align:left;margin-top:6px;border-left:3px solid #0d9488;';
+        replyBubble.innerHTML = `✅ Central SERVIROV: Entendido. Registro ingresado en bitácora para Módulo ${currentVisorWaCageId}. Se han activado los protocolos de intervención técnica en terreno.<div style="text-align:right;font-size:8px;color:#94a3b8;margin-top:3px;font-weight:bold;">${new Date().toLocaleTimeString().substring(0, 5)}</div>`;
+        container.appendChild(replyBubble);
+        container.scrollTop = container.scrollHeight;
+      }, 1200);
     }
 
     function closeVisorWaModal() {

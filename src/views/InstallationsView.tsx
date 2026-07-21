@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ShieldAlert, CheckCircle2, Info, Eye, Smartphone } from 'lucide-react';
 import { type CageData } from '../data/mockData';
 
 export const InstallationsView: React.FC = () => {
-  const { selectedCenter, rovReports, openPhoneModal } = useApp();
-  const [selectedCage, setSelectedCage] = useState<CageData | null>(selectedCenter.cages[0]);
+  const { selectedCenter, rovReports, openPhoneModal, selectedCageId, setSelectedCageId } = useApp();
+
+  const selectedCage = selectedCenter.cages.find(c => c.id === selectedCageId) || selectedCenter.cages[0];
+  const setSelectedCage = (cage: CageData) => setSelectedCageId(cage.id);
+
+  useEffect(() => {
+    if (selectedCenter.cages.length > 0 && !selectedCenter.cages.some(c => c.id === selectedCageId)) {
+      setSelectedCageId(selectedCenter.cages[0].id);
+    }
+  }, [selectedCenter, selectedCageId, setSelectedCageId]);
 
   const detectCageId = (reportText: string) => {
     const text = reportText.toLowerCase();
@@ -52,12 +60,12 @@ export const InstallationsView: React.FC = () => {
           {/* Cages Grid */}
           <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-premium">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-50 pb-3 flex justify-between items-center">
-              <span>Malla Flotante de Producción ({Math.min(3, selectedCenter.cages.length)} Módulos)</span>
-              <span className="text-[11px] font-normal text-slate-400 font-mono">Grilla 1x3 • Visor 3D Activo</span>
+              <span>Malla Flotante de Producción ({selectedCenter.cages.length} Módulos)</span>
+              <span className="text-[11px] font-normal text-slate-400 font-mono">Grilla {selectedCenter.cages.length} Módulos</span>
             </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {selectedCenter.cages.slice(0, 3).map(cage => {
+              {selectedCenter.cages.map(cage => {
                 const cageNum = cage.id.replace('h-', '').replace('a-', '').replace('q-', '').replace('h101', '101').replace('h102', '102').replace('h103', '103').replace('h104', '104').replace('h105', '105').replace('h106', '106');
                 const matchingReport = rovReports.find(
                   r => r.centroId === selectedCenter.id && detectCageId(r.nombre + ' ' + r.redes) === cageNum
@@ -74,7 +82,7 @@ export const InstallationsView: React.FC = () => {
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1.5">
                           <span className="font-bold text-slate-800 text-sm">{cage.name.replace('Jaula', 'Módulo')}</span>
                           <a
@@ -97,6 +105,23 @@ export const InstallationsView: React.FC = () => {
                         }`}>
                           {cage.status}
                         </span>
+                      </div>
+
+                      {/* Visual Mallas Badge & Tags */}
+                      <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                        <span className="bg-cyan-100 text-cyan-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md font-mono border border-cyan-200">
+                          {cage.netsCount || (cage.nets ? cage.nets.length : 3)} Mallas
+                        </span>
+                        {cage.nets?.slice(0, 2).map((net, idx) => (
+                          <span key={idx} className="bg-slate-100 text-slate-600 text-[9px] font-semibold px-1.5 py-0.5 rounded">
+                            {net.tipo} ({net.ojoMallaMm}mm)
+                          </span>
+                        ))}
+                        {(cage.nets?.length || 0) > 2 && (
+                          <span className="text-[9px] text-slate-400 font-bold">
+                            +{(cage.nets?.length || 0) - 2} más
+                          </span>
+                        )}
                       </div>
                     
                       <div className="space-y-1.5 text-xs text-slate-500 mb-3">
@@ -146,6 +171,8 @@ export const InstallationsView: React.FC = () => {
               })}
             </div>
           </div>
+
+
         </div>
 
         {/* Right Column: Cage Detail Sidebar */}
@@ -157,58 +184,100 @@ export const InstallationsView: React.FC = () => {
             </h3>
 
             {selectedCage ? (
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-xl font-bold text-slate-800">{selectedCage.name.replace('Jaula', 'Módulo')}</h4>
-                  <span className="text-slate-400 text-xs font-mono">Stock de Producción</span>
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-800">{selectedCage.name.replace('Jaula', 'Módulo')}</h4>
+                    <span className="text-slate-400 text-xs font-mono">Stock de Producción Real</span>
+                  </div>
+                  <span className="bg-cyan-50 border border-cyan-200 text-cyan-700 px-2.5 py-1 rounded-lg text-xs font-bold font-mono">
+                    {selectedCage.netsCount || selectedCage.nets?.length || 3} Mallas
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100/50">
                     <span className="text-slate-400 text-[10px] font-semibold block uppercase">Especie</span>
-                    <span className="text-sm font-bold text-slate-700">{selectedCage.species}</span>
+                    <span className="text-xs font-bold text-slate-700">{selectedCage.species}</span>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100/50">
                     <span className="text-slate-400 text-[10px] font-semibold block uppercase">N° Peces</span>
-                    <span className="text-sm font-bold text-slate-700">{selectedCage.count.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-slate-700">{selectedCage.count.toLocaleString()}</span>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100/50">
                     <span className="text-slate-400 text-[10px] font-semibold block uppercase">Peso Promedio</span>
-                    <span className="text-sm font-bold text-slate-700">{selectedCage.avgWeightKg} kg</span>
+                    <span className="text-xs font-bold text-slate-700">{selectedCage.avgWeightKg} kg</span>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100/50">
                     <span className="text-slate-400 text-[10px] font-semibold block uppercase">Biomasa Total</span>
-                    <span className="text-sm font-bold text-slate-700">{selectedCage.biomassTons} t</span>
+                    <span className="text-xs font-bold text-slate-700">{selectedCage.biomassTons} t</span>
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-3 border-t border-slate-100">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500 font-semibold">Última Limpieza de Malla</span>
-                    <span className="text-slate-700 font-bold bg-slate-100 px-2 py-0.5 rounded-lg">{selectedCage.lastCleaned}</span>
+                {/* Mallas Específicas del Módulo */}
+                {selectedCage.nets && selectedCage.nets.length > 0 && (
+                  <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <div className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
+                      <span>Estructura de Mallas ({selectedCage.nets.length})</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {selectedCage.nets.map((net, i) => (
+                        <div key={i} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                          <div>
+                            <div className="font-bold text-slate-700 text-[11px]">{net.nombre}</div>
+                            <div className="text-[10px] text-slate-400">Ojo: {net.ojoMallaMm}mm • Profundidad: {net.profundidadMts}m</div>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                            net.estado === 'Óptimo' ? 'bg-emerald-100 text-emerald-700' :
+                            net.estado === 'Biofouling' ? 'bg-amber-100 text-amber-700' :
+                            net.estado === 'Desgaste' ? 'bg-orange-100 text-orange-700' :
+                            'bg-red-100 text-red-700 animate-pulse'
+                          }`}>
+                            {net.estado}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500 font-semibold">Tensión Sensor L-Fondeo</span>
-                    <span className="text-slate-700 font-bold">{selectedCage.mooringTensionKn.toFixed(1)} kN</span>
-                  </div>
-                </div>
+                )}
 
-                <div className="p-4 rounded-xl border bg-slate-50/50 space-y-2">
-                  <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">Evaluación de Riesgo</div>
+                {/* Informe ROV Exclusivo del Módulo */}
+                {selectedCage.reportSummary && (
+                  <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <div className="text-xs font-bold text-cyan-700 uppercase tracking-wider flex items-center justify-between">
+                      <span>Informe ROV del Módulo</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{selectedCage.reportSummary.fecha}</span>
+                    </div>
+                    <div className="p-3 bg-cyan-50/40 rounded-xl border border-cyan-100 space-y-1.5 text-xs">
+                      <div className="font-bold text-slate-800 text-[11px]">{selectedCage.reportSummary.titulo}</div>
+                      <div className="text-[10px] text-slate-500">Piloto: <span className="font-semibold text-slate-700">{selectedCage.reportSummary.piloto}</span></div>
+                      <div className="text-[11px] text-slate-600 bg-white p-2 rounded-md border border-cyan-100/50">
+                        {selectedCage.reportSummary.hallazgoClave}
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-500 pt-1">
+                        <span>Biofouling: <strong>{selectedCage.reportSummary.nivelBiofouling}</strong></span>
+                        <span>Costuras: <strong>{selectedCage.reportSummary.estadoCosturas}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-3.5 rounded-xl border bg-slate-50/50 space-y-2">
+                  <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">Evaluación de Riesgo Real</div>
                   {selectedCage.status === 'optimal' ? (
                     <div className="text-xs text-emerald-700 bg-emerald-100/50 p-2.5 rounded-lg flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span>Estructura intacta. Malla limpia de biofouling y anclajes en rango óptimo de tracción. No requiere mantención inmediata.</span>
+                      <span>Estructura intacta (Integridad {selectedCage.netIntegrity}%). Malla limpia de biofouling y tracción de fondeo en {selectedCage.mooringTensionKn.toFixed(1)} kN. No requiere mantención inmediata.</span>
                     </div>
                   ) : selectedCage.status === 'warning' ? (
                     <div className="text-xs text-amber-700 bg-amber-100/50 p-2.5 rounded-lg flex items-start gap-2">
                       <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span>Integridad en 82.5%. Acumulación moderada de algas detectada por sensores de flujo. Se aconseja programar limpieza en 72 horas.</span>
+                      <span>Integridad en {selectedCage.netIntegrity}%. Acumulación moderada de biofouling y tensión en {selectedCage.mooringTensionKn.toFixed(1)} kN. Se aconseja programar limpieza preventiva en 72 horas.</span>
                     </div>
                   ) : (
                     <div className="text-xs text-red-700 bg-red-100/50 p-2.5 rounded-lg flex items-start gap-2 border border-red-200/50">
                       <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span>ALERTA CRÍTICA: Integridad del 74.2% con indicios de rotura en el paño inferior. Tensión crítica de fondeo en 94.5 kN. Desplegar ROV de inspección de manera prioritaria.</span>
+                      <span>ALERTA CRÍTICA: Integridad del {selectedCage.netIntegrity}% con indicios de falla o desgaste en paño. Tensión crítica de fondeo en {selectedCage.mooringTensionKn.toFixed(1)} kN. Desplegar ROV de inspección de manera prioritaria.</span>
                     </div>
                   )}
 

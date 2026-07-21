@@ -27,8 +27,7 @@ const AppContent: React.FC = () => {
       case 'dashboard':
         return <DashboardView />;
       case 'installations':
-        const canAccessInstallations = currentUser.role === 'Cliente' || currentUser.role === 'admin' || currentUser.email === 'cliente@servirov.cl' || currentUser.email === 'admin@servirov.cl';
-        return canAccessInstallations ? <InstallationsView /> : <DashboardView />;
+        return <InstallationsView />;
       case 'findings':
         return <FindingsView />;
       case 'multimodal':

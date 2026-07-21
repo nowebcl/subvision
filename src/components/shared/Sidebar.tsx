@@ -33,8 +33,9 @@ export const Sidebar: React.FC = () => {
 
   if (isClient || isAdmin) {
     menuItems.push({ id: 'client-portal', name: 'Pilotos y Centros', icon: Building2, badge: 0 });
-    menuItems.push({ id: 'installations', name: 'Módulos', icon: Anchor, badge: 0 });
   }
+
+  menuItems.push({ id: 'installations', name: 'Módulos', icon: Anchor, badge: 0 });
 
   menuItems.push(
     { id: 'findings', name: 'Hallazgos', icon: AlertTriangle, badge: 0 },
