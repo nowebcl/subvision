@@ -916,7 +916,7 @@
     }
 
     function getMarker3DPosition(report, finding, globalIdx, urlCenterId) {
-      let cageId = (finding && finding.jaula) ? finding.jaula : detectCageId(report);
+      let cageId = (finding && finding.jaula) ? finding.jaula : (typeof detectCageId === 'function' ? detectCageId(report) : '101');
       if (!cageId) cageId = '101';
       cageId = cageId.replace('Jaula ', '').trim();
 
@@ -924,88 +924,53 @@
       if (cageId.startsWith('3') || cageId.startsWith('4')) {
         lookupId = '1' + cageId.substring(1);
       }
+      
+      const parsedNum = parseInt(lookupId, 10);
+      let index = 0;
+      if (!isNaN(parsedNum) && parsedNum >= 101 && parsedNum <= 110) {
+        index = parsedNum - 101;
+      }
+
+      const rows = 2;
+      const cols = 5;
+      const cageW = 22;
+      const cageD = 22;
+      const cageSpacing = 2; 
+      
+      const offsetX = (cols * cageW + (cols-1)*cageSpacing) / 2;
+      const offsetZ = (rows * cageD + (rows-1)*cageSpacing) / 2;
+
+      const r = Math.floor(index / cols);
+      const c = index % cols;
+
+      const cx = -offsetX + cageW/2 + c*(cageW+cageSpacing);
+      const cz = -offsetZ + cageD/2 + r*(cageD+cageSpacing);
 
       const seccion = finding ? (finding.seccion || '').toLowerCase() : '';
       let secKey = 'fondo';
       if (seccion.includes('flotador') || seccion.includes('superficie')) secKey = 'flotador';
       else if (seccion.includes('lateral')) secKey = 'lateral';
 
-      if (urlCenterId === 'centro-pilpilehue') {
-        let centerZ = 28; // default Jaula 101
-        const parsedNum = parseInt(lookupId, 10);
-        if (!isNaN(parsedNum)) {
-          if (lookupId === '101' || lookupId === '104' || lookupId === '107' || lookupId === '110') centerZ = 28;
-          else if (lookupId === '102' || lookupId === '105' || lookupId === '108' || lookupId === '111') centerZ = 0;
-          else if (lookupId === '103' || lookupId === '106' || lookupId === '109' || lookupId === '112') centerZ = -28;
-        }
-
-        let nodes = [];
-        if (secKey === 'flotador') {
-          // Surface ring / top beam wireframe intersections (Y = 8 to 9.5)
-          nodes = [
-            [-12, 8.5, centerZ], [12, 8.5, centerZ], [0, 8.5, centerZ],
-            [-12, 8.5, centerZ - 14], [12, 8.5, centerZ - 14], [0, 8.5, centerZ - 14],
-            [-12, 8.5, centerZ + 14], [12, 8.5, centerZ + 14], [0, 8.5, centerZ + 14]
-          ];
-        } else if (secKey === 'lateral') {
-          // Vertical wall intersections, distributed equally and higher up (Y = 5, 2, -1) where wireframe lines join
-          nodes = [
-            [-12, 5, centerZ], [12, 5, centerZ],
-            [-12, 2, centerZ], [12, 2, centerZ],
-            [-12, -1, centerZ], [12, -1, centerZ],
-            [-12, 5, centerZ - 14], [12, 5, centerZ - 14],
-            [-12, 2, centerZ - 14], [12, 2, centerZ - 14],
-            [-12, 5, centerZ + 14], [12, 5, centerZ + 14],
-            [-12, 2, centerZ + 14], [12, 2, centerZ + 14],
-            [0, 5, centerZ - 14], [0, 5, centerZ + 14],
-            [0, 2, centerZ - 14], [0, 2, centerZ + 14]
-          ];
-        } else {
-          // Bottom & lower-wall seam intersections, spread higher up (Y = -2, -5) right where wireframe lines join so they are super visible
-          nodes = [
-            [-12, -2, centerZ], [12, -2, centerZ], [0, -2, centerZ],
-            [-12, -5, centerZ], [12, -5, centerZ], [0, -5, centerZ],
-            [-12, -2, centerZ - 14], [12, -2, centerZ - 14], [0, -2, centerZ - 14],
-            [-12, -5, centerZ - 14], [12, -5, centerZ - 14], [0, -5, centerZ - 14],
-            [-12, -2, centerZ + 14], [12, -2, centerZ + 14], [0, -2, centerZ + 14],
-            [-12, -5, centerZ + 14], [12, -5, centerZ + 14], [0, -5, centerZ + 14]
-          ];
-        }
-
-        const picked = nodes[globalIdx % nodes.length];
-        const rawX = picked[0];
-        const rawY = picked[1];
-        const rawZ = picked[2];
-
-        // Apply exact mesh taper transformation so the coordinate sits precisely on the red wireframe lines of the installation
-        const normY = (rawY + 8) / 16;
-        const scaleX = 0.82 + 0.18 * normY;
-        const scaleZ = (76 + 8 * normY) / 84;
-        return new THREE.Vector3(rawX * scaleX, rawY, rawZ * scaleZ);
-      }
-
-      // Fallback 2x7 grid centers (Centro Apiao, Centro Quellon), distributed equally on the grid lines
-      const basePos = cageCoords[lookupId] || cageCoords['101'] || new THREE.Vector3(0, 8, 0);
-      const bx = basePos.x;
-      const bz = basePos.z;
-
-      let yPos = -3;
-      if (secKey === 'flotador') yPos = 8;
-      else if (secKey === 'lateral') yPos = 3;
-
-      // Exact wireframe corners and midpoint intersections of BoxGeometry(22, 16, 22) centered at (bx, 0, bz)
-      const gridNodes = [
-        new THREE.Vector3(bx - 11, yPos, bz - 11),
-        new THREE.Vector3(bx + 11, yPos, bz - 11),
-        new THREE.Vector3(bx - 11, yPos, bz + 11),
-        new THREE.Vector3(bx + 11, yPos, bz + 11),
-        new THREE.Vector3(bx, yPos, bz - 11),
-        new THREE.Vector3(bx, yPos, bz + 11),
-        new THREE.Vector3(bx - 11, yPos, bz),
-        new THREE.Vector3(bx + 11, yPos, bz)
+      // Variar la posicion con globalIdx para no superponer si hay varios en la misma jaula
+      const offsetVariations = [
+        [0, 0], [cageW/2, 0], [-cageW/2, 0], [0, cageD/2], [0, -cageD/2],
+        [cageW/2, cageD/2], [-cageW/2, -cageD/2]
       ];
+      const varIdx = globalIdx % offsetVariations.length;
+      const vx = offsetVariations[varIdx][0];
+      const vz = offsetVariations[varIdx][1];
 
-      return gridNodes[globalIdx % gridNodes.length];
+      if (secKey === 'flotador') {
+        // En la pasarela
+        return new THREE.Vector3(cx + vx, 8.5, cz + vz);
+      } else if (secKey === 'lateral') {
+        // Pared de la malla (Y entre 8 y -4)
+        return new THREE.Vector3(cx + vx, 2, cz + vz);
+      } else {
+        // Fondo (Embudo inferior, Y = -12)
+        // El embudo se reduce (bW = cageW * 0.4 = 8.8)
+        return new THREE.Vector3(cx + vx * 0.4, -12, cz + vz * 0.4);
+      }
     }
 
     async function loadReportsAndCreateMarkers() {
@@ -1224,10 +1189,9 @@
 
     function createSeabed() {
       const gridHelper = new THREE.GridHelper(400, 40, 0x0e2b5c, 0x0b1c3c);
-      gridHelper.position.y = -25;
+      gridHelper.position.y = -50;
       scene.add(gridHelper);
 
-      // Star Compass Rose on the water plane (left of cages grid) matching screenshot
       const compassGeo = new THREE.PlaneGeometry(36, 36);
       const compassTexture = createCompassTexture();
       const compassMat = new THREE.MeshBasicMaterial({
@@ -1238,321 +1202,243 @@
       });
       const compassMesh = new THREE.Mesh(compassGeo, compassMat);
       compassMesh.rotation.x = -Math.PI / 2;
-      compassMesh.position.set(-42, 7.9, -15);
+      compassMesh.position.set(-80, 7.9, -50);
       scene.add(compassMesh);
 
       const planeGeo = new THREE.PlaneGeometry(1200, 1200);
       const planeMat = new THREE.MeshStandardMaterial({ color: 0x05122b, roughness: 0.85, metalness: 0.12 });
       const seabedPlane = new THREE.Mesh(planeGeo, planeMat);
       seabedPlane.rotation.x = -Math.PI / 2;
-      seabedPlane.position.y = -25.1;
+      seabedPlane.position.y = -50.1;
       scene.add(seabedPlane);
+
+      // WATER PLANE at Y=0
+      const waterGeo = new THREE.PlaneGeometry(1200, 1200);
+      const waterMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false });
+      const waterPlane = new THREE.Mesh(waterGeo, waterMat);
+      waterPlane.rotation.x = -Math.PI / 2;
+      waterPlane.position.y = 0;
+      scene.add(waterPlane);
     }
 
     function createCages() {
       cageGroup = new THREE.Group();
+
+      const rows = 2;
+      const cols = 5;
+      const cageW = 22;
+      const cageD = 22;
+      const cageSpacing = 2; 
       
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlCenterId = urlParams.get('center') || 'centro-pilpilehue';
-      const isPilpilehue = urlCenterId === 'centro-pilpilehue';
+      const offsetX = (cols * cageW + (cols-1)*cageSpacing) / 2;
+      const offsetZ = (rows * cageD + (rows-1)*cageSpacing) / 2;
 
-      if (isPilpilehue) {
-        // 1x3 Cage Grid for Centro Pilpilehue (matching screenshot cage layout)
-        const longBeamGeo = new THREE.BoxGeometry(1.2, 1.2, 84);
-        const beamMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 });
-        
-        [-12, 12].forEach(x => {
-          const beam = new THREE.Mesh(longBeamGeo, beamMat);
-          beam.position.set(x, 8, 0);
-          cageGroup.add(beam);
-        });
+      const walkwayMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+      const walkwayThick = 1.5;
 
-        const crossBeamGeo = new THREE.BoxGeometry(24, 1.2, 1.2);
-        [-42, -14, 14, 42].forEach(z => {
-          const beam = new THREE.Mesh(crossBeamGeo, beamMat);
-          beam.position.set(0, 8, z);
-          cageGroup.add(beam);
-        });
+      // 1. Walkways (Marco de Superficie)
+      for (let r = 0; r <= rows; r++) {
+        const z = -offsetZ + r * (cageD + cageSpacing) - (r===0 ? 0 : cageSpacing/2);
+        const geo = new THREE.BoxGeometry(offsetX * 2, walkwayThick, walkwayThick);
+        const mesh = new THREE.Mesh(geo, walkwayMat);
+        mesh.position.set(0, 8, z);
+        cageGroup.add(mesh);
+      }
+      for (let c = 0; c <= cols; c++) {
+        const x = -offsetX + c * (cageW + cageSpacing) - (c===0 ? 0 : cageSpacing/2);
+        const geo = new THREE.BoxGeometry(walkwayThick, walkwayThick, offsetZ * 2);
+        const mesh = new THREE.Mesh(geo, walkwayMat);
+        mesh.position.set(x, 8, 0);
+        cageGroup.add(mesh);
+      }
 
-        const cagesData = [
-          { id: '103', z: -28 },
-          { id: '102', z: 0 },
-          { id: '101', z: 28 }
-        ];
+      // Materiales
+      const netMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false });
+      const netWireMat = new THREE.LineBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.6 });
+      const pajareraMat = new THREE.LineBasicMaterial({ color: 0x111111, linewidth: 2 });
+      const weightMat = new THREE.MeshStandardMaterial({ color: 0xd91616, roughness: 0.5 });
+      const buoyMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 });
 
-        // 1. Create the outer net geometry for transparent filled walls
-        const outerNetGeo = new THREE.BoxGeometry(24, 16, 84, 2, 2, 6);
-        const pos = outerNetGeo.attributes.position;
-        for (let i = 0; i < pos.count; i++) {
-          let x = pos.getX(i);
-          let y = pos.getY(i);
-          let z = pos.getZ(i);
+      // Geometrias reusables
+      const weightGeo = new THREE.ConeGeometry(0.8, 1.5, 8);
+      weightGeo.translate(0, -0.75, 0);
+      const buoyGeo = new THREE.CylinderGeometry(1.5, 1.0, 2.5, 16);
+      
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cx = -offsetX + cageW/2 + c*(cageW+cageSpacing);
+          const cz = -offsetZ + cageD/2 + r*(cageD+cageSpacing);
 
-          const normY = (y + 8) / 16;
-          const scaleX = 0.82 + 0.18 * normY;
-          x *= scaleX;
+          // 2. Red Pajarera (Techo Piramidal)
+          const pGeo = new THREE.BufferGeometry();
+          const pHeight = 4;
+          const pyY = 8 + walkwayThick/2;
+          const pPts = [
+            new THREE.Vector3(-cageW/2, pyY, -cageD/2), new THREE.Vector3(0, pyY+pHeight, 0),
+            new THREE.Vector3(cageW/2, pyY, -cageD/2), new THREE.Vector3(0, pyY+pHeight, 0),
+            new THREE.Vector3(cageW/2, pyY, cageD/2), new THREE.Vector3(0, pyY+pHeight, 0),
+            new THREE.Vector3(-cageW/2, pyY, cageD/2), new THREE.Vector3(0, pyY+pHeight, 0),
+            // base rectangle
+            new THREE.Vector3(-cageW/2, pyY, -cageD/2), new THREE.Vector3(cageW/2, pyY, -cageD/2),
+            new THREE.Vector3(cageW/2, pyY, -cageD/2), new THREE.Vector3(cageW/2, pyY, cageD/2),
+            new THREE.Vector3(cageW/2, pyY, cageD/2), new THREE.Vector3(-cageW/2, pyY, cageD/2),
+            new THREE.Vector3(-cageW/2, pyY, cageD/2), new THREE.Vector3(-cageW/2, pyY, -cageD/2),
+          ];
+          pGeo.setFromPoints(pPts);
+          const pLine = new THREE.LineSegments(pGeo, pajareraMat);
+          pLine.position.set(cx, 0, cz);
+          cageGroup.add(pLine);
 
-          const scaleZ = (76 + 8 * normY) / 84;
-          z *= scaleZ;
+          // 3. Red Pecera (Caja + Embudo Inferior)
+          const netDepth1 = 12; // straight part
+          const netDepth2 = 8;  // funnel part
+          const bW = cageW * 0.4; // bottom width of funnel
+          
+          const netGeom = new THREE.BufferGeometry();
+          const v = [
+            // Top rect (Y = 8)
+            -cageW/2, 8, -cageD/2,   cageW/2, 8, -cageD/2,   cageW/2, 8, cageD/2,   -cageW/2, 8, cageD/2,
+            // Mid rect (Y = 8 - netDepth1)
+            -cageW/2, 8-netDepth1, -cageD/2,   cageW/2, 8-netDepth1, -cageD/2,   cageW/2, 8-netDepth1, cageD/2,   -cageW/2, 8-netDepth1, cageD/2,
+            // Bot rect (Y = 8 - netDepth1 - netDepth2)
+            -bW/2, 8-netDepth1-netDepth2, -bW/2,   bW/2, 8-netDepth1-netDepth2, -bW/2,   bW/2, 8-netDepth1-netDepth2, bW/2,   -bW/2, 8-netDepth1-netDepth2, bW/2
+          ];
+          const vertices = new Float32Array(v);
+          const indices = [
+            0,1,5, 0,5,4, 1,2,6, 1,6,5, 2,3,7, 2,7,6, 3,0,4, 3,4,7, // top walls
+            4,5,9, 4,9,8, 5,6,10, 5,10,9, 6,7,11, 6,11,10, 7,4,8, 7,8,11, // funnel walls
+            8,9,10, 8,10,11 // bottom floor
+          ];
+          netGeom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+          netGeom.setIndex(indices);
+          netGeom.computeVertexNormals();
+          
+          const netMesh = new THREE.Mesh(netGeom, netMat);
+          netMesh.position.set(cx, 0, cz);
+          cageGroup.add(netMesh);
 
-          pos.setXYZ(i, x, y, z);
-        }
-        outerNetGeo.computeVertexNormals();
-        outerNetGeo.attributes.position.needsUpdate = true;
+          const edges = new THREE.EdgesGeometry(netGeom);
+          const line = new THREE.LineSegments(edges, netWireMat);
+          line.position.set(cx, 0, cz);
+          cageGroup.add(line);
 
-        const netWallMat = new THREE.MeshBasicMaterial({
-          color: 0xef4444,
-          transparent: true,
-          opacity: 0.08,
-          side: THREE.DoubleSide
-        });
-        const outerNetWall = new THREE.Mesh(outerNetGeo, netWallMat);
-        outerNetWall.position.set(0, 0, 0);
-        cageGroup.add(outerNetWall);
-
-        // 2. Generate clean custom grid wireframe (no side diagonals)
-        const gridPoints = [];
-        const xCoords = [-12, 0, 12];
-        const yCoords = [-8, 0, 8];
-        const zCoords = [-42, -28, -14, 0, 14, 28, 42];
-
-        function getTaperedPt(x, y, z) {
-          const normY = (y + 8) / 16;
-          const scaleX = 0.82 + 0.18 * normY;
-          const scaleZ = (76 + 8 * normY) / 84;
-          return new THREE.Vector3(x * scaleX, y, z * scaleZ);
-        }
-
-        // Longitudinal lines (along Z)
-        xCoords.forEach(x => {
-          yCoords.forEach(y => {
-            for (let i = 0; i < zCoords.length - 1; i++) {
-              gridPoints.push(getTaperedPt(x, y, zCoords[i]));
-              gridPoints.push(getTaperedPt(x, y, zCoords[i+1]));
-            }
-          });
-        });
-
-        // Transverse lines (along X)
-        zCoords.forEach(z => {
-          yCoords.forEach(y => {
-            for (let i = 0; i < xCoords.length - 1; i++) {
-              gridPoints.push(getTaperedPt(xCoords[i], y, z));
-              gridPoints.push(getTaperedPt(xCoords[i+1], y, z));
-            }
-          });
-        });
-
-        // Vertical lines (along Y)
-        xCoords.forEach(x => {
-          zCoords.forEach(z => {
-            for (let i = 0; i < yCoords.length - 1; i++) {
-              gridPoints.push(getTaperedPt(x, yCoords[i], z));
-              gridPoints.push(getTaperedPt(x, yCoords[i+1], z));
-            }
-          });
-        });
-
-        // Diagonals for bottom quads (Y from -8 to 0) on outer sides
-        [-12, 12].forEach(x => {
-          for (let i = 0; i < zCoords.length - 1; i++) {
-            gridPoints.push(getTaperedPt(x, 0, zCoords[i]));
-            gridPoints.push(getTaperedPt(x, -8, zCoords[i+1]));
-          }
-        });
-
-        // Diagonals for bottom ends (Z = -42 and Z = 42)
-        [-42, 42].forEach(z => {
-          gridPoints.push(getTaperedPt(-12, 0, z));
-          gridPoints.push(getTaperedPt(12, -8, z));
-          gridPoints.push(getTaperedPt(12, 0, z));
-          gridPoints.push(getTaperedPt(-12, -8, z));
-        });
-
-        // Diagonals for bottom floor (Y = -8)
-        for (let i = 0; i < zCoords.length - 1; i++) {
-          gridPoints.push(getTaperedPt(-12, -8, zCoords[i]));
-          gridPoints.push(getTaperedPt(0, -8, zCoords[i+1]));
-          gridPoints.push(getTaperedPt(0, -8, zCoords[i]));
-          gridPoints.push(getTaperedPt(12, -8, zCoords[i+1]));
-        }
-
-        // Add partition lines to grid
-        [-14, 14].forEach(zPos => {
-          // Vertical lines
-          [-12, 0, 12].forEach(x => {
-            gridPoints.push(getTaperedPt(x, -8, zPos));
-            gridPoints.push(getTaperedPt(x, 8, zPos));
-          });
-          // Horizontal lines
-          [-8, 0, 8].forEach(y => {
-            gridPoints.push(getTaperedPt(-12, y, zPos));
-            gridPoints.push(getTaperedPt(12, y, zPos));
-          });
-          // Diagonals for partitions bottom half
-          gridPoints.push(getTaperedPt(-12, 0, zPos));
-          gridPoints.push(getTaperedPt(12, -8, zPos));
-        });
-
-        // Create the wireframe mesh using custom points
-        const lineMat = new THREE.LineBasicMaterial({ 
-          color: 0xef4444, 
-          linewidth: 1.5,
-          transparent: true,
-          opacity: 0.8
-        });
-        const gridGeo = new THREE.BufferGeometry().setFromPoints(gridPoints);
-        const outerNetLine = new THREE.LineSegments(gridGeo, lineMat);
-        cageGroup.add(outerNetLine);
-
-        // 3. Create transparent partition walls (for filled volume rendering)
-        [-14, 14].forEach(zPos => {
-          const partGeo = new THREE.PlaneGeometry(24, 16, 2, 2);
-          const partPos = partGeo.attributes.position;
-          for (let i = 0; i < partPos.count; i++) {
-            let x = partPos.getX(i);
-            let y = partPos.getY(i);
-            const normY = (y + 8) / 16;
-            const scaleX = 0.82 + 0.18 * normY;
-            x *= scaleX;
-            partPos.setXYZ(i, x, y, 0);
-          }
-          partGeo.computeVertexNormals();
-          partGeo.attributes.position.needsUpdate = true;
-
-          const partWall = new THREE.Mesh(partGeo, netWallMat);
-          partWall.position.set(0, 0, zPos);
-          cageGroup.add(partWall);
-        });
-
-        // 4. Create 3D Dark Blue rectangular labels inside cages
-        cagesData.forEach(c => {
-          const labelGeo = new THREE.PlaneGeometry(12, 6);
-          const labelMat = new THREE.MeshBasicMaterial({ map: createLabelTexture(c.id), side: THREE.DoubleSide });
-          const labelMesh = new THREE.Mesh(labelGeo, labelMat);
-          labelMesh.rotation.x = -Math.PI / 2;
-          labelMesh.position.set(0, 8.15, c.z);
-          cageGroup.add(labelMesh);
-        });
-      } else {
-        // 2x7 cages grid fallback for other centers (Centro Apiao - Módulo 300 and Centro Quellón - Módulo 400)
-        let baseId = 300;
-        if (urlCenterId === 'centro-quellon') baseId = 400;
-
-        const colorMap = [0x10b981, 0xef4444]; // Green, Red (Strictly bicolor)
-
-        const longBeamGeo = new THREE.BoxGeometry(196, 1.2, 1.2);
-        const beamMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 });
-        
-        [-14, 0, 14].forEach(z => {
-          const beam = new THREE.Mesh(longBeamGeo, beamMat);
-          beam.position.set(0, 8, z);
-          cageGroup.add(beam);
-        });
-
-        const crossBeamGeo = new THREE.BoxGeometry(1.2, 1.2, 30);
-        for (let c = 0; c < 8; c++) {
-          const x = (c - 3.5) * 28;
-          const beam = new THREE.Mesh(crossBeamGeo, beamMat);
-          beam.position.set(x, 8, 0);
-          cageGroup.add(beam);
-        }
-
-        for (let r = 0; r < 2; r++) {
-          const z = (r - 0.5) * 28;
-          for (let c = 0; c < 7; c++) {
-            const x = (c - 3) * 28;
-            
-            // Map cage ID: Row 1 has 301, 303, ... / 401, 403, ...
-            // Row 2 has 302, 304, ... / 402, 404, ...
-            const cageIdNum = (r === 0) ? (baseId + 1 + c * 2) : (baseId + 2 + c * 2);
-            const cageId = cageIdNum.toString();
-
-            // Strictly bicolor color assignment
-            const isCrit = cageId === '303' || cageId === '403';
-            const cageColor = isCrit ? 0xef4444 : 0x10b981;
-
-            const netGeo = new THREE.BoxGeometry(22, 16, 22);
-            const wireframe = new THREE.EdgesGeometry(netGeo);
-            const lineMat = new THREE.LineBasicMaterial({ color: cageColor, linewidth: 1.5, transparent: true, opacity: 0.65 });
-            const netLine = new THREE.LineSegments(wireframe, lineMat);
-            netLine.position.set(x, 0, z);
-            cageGroup.add(netLine);
-
-            const netWallMat = new THREE.MeshBasicMaterial({ color: cageColor, transparent: true, opacity: 0.04, side: THREE.DoubleSide });
-            const netWall = new THREE.Mesh(netGeo, netWallMat);
-            netWall.position.set(x, 0, z);
-            cageGroup.add(netWall);
-
-            // Add 3D label inside the cage
-            const labelGeo = new THREE.PlaneGeometry(12, 6);
-            const labelMat = new THREE.MeshBasicMaterial({ map: createLabelTexture(cageId), side: THREE.DoubleSide });
-            const labelMesh = new THREE.Mesh(labelGeo, labelMat);
-            labelMesh.rotation.x = -Math.PI / 2;
-            labelMesh.position.set(x, 8.15, z);
-            cageGroup.add(labelMesh);
-
-            if (isCrit) {
-              const alertGeo = new THREE.BoxGeometry(24.5, 17, 24.5);
-              const alertWire = new THREE.EdgesGeometry(alertGeo);
-              const alertMat = new THREE.LineBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.7 });
-              const alertBox = new THREE.LineSegments(alertWire, alertMat);
-              alertBox.position.set(x, 0, z);
-              alertBox.name = `crit-alert-${cageId}`;
-              cageGroup.add(alertBox);
+          // 4. Pesos (Conos Rojos) en el borde inferior del embudo
+          const pts = [
+            new THREE.Vector3(-bW/2, 8-netDepth1-netDepth2, -bW/2),
+            new THREE.Vector3(bW/2, 8-netDepth1-netDepth2, -bW/2),
+            new THREE.Vector3(bW/2, 8-netDepth1-netDepth2, bW/2),
+            new THREE.Vector3(-bW/2, 8-netDepth1-netDepth2, bW/2)
+          ];
+          for(let i=0; i<4; i++) {
+            const pA = pts[i];
+            const pB = pts[(i+1)%4];
+            // put 3 weights along each edge
+            for(let step=0; step<=3; step++) {
+              if (step===3 && i<3) continue; // avoid exact overlap at corners
+              const wPos = new THREE.Vector3().lerpVectors(pA, pB, step/3);
+              const wMesh = new THREE.Mesh(weightGeo, weightMat);
+              wMesh.position.set(cx + wPos.x, wPos.y, cz + wPos.z);
+              wMesh.rotation.x = Math.PI; // point down
+              cageGroup.add(wMesh);
             }
           }
+
+          // Labels
+          const lGeo = new THREE.PlaneGeometry(8, 4);
+          const idStr = (100 + (r*cols + c + 1)).toString();
+          const lMat = new THREE.MeshBasicMaterial({ map: createLabelTexture(idStr), side: THREE.DoubleSide, transparent: true });
+          const lMesh = new THREE.Mesh(lGeo, lMat);
+          lMesh.rotation.x = -Math.PI / 2;
+          lMesh.position.set(cx, 8.5, cz);
+          cageGroup.add(lMesh);
         }
+      }
+
+      // 6. Boyas Perimetrales (Cubetas naranjas)
+      const boyaY = 7.5;
+      for (let r = 0; r <= rows; r++) {
+        const z = -offsetZ + r * (cageD + cageSpacing) - (r===0 ? 0 : cageSpacing/2);
+        [-offsetX - 4, offsetX + 4].forEach(x => {
+          const boya = new THREE.Mesh(buoyGeo, buoyMat);
+          boya.position.set(x, boyaY, z);
+          cageGroup.add(boya);
+        });
+      }
+      for (let c = 0; c <= cols; c++) {
+        const x = -offsetX + c * (cageW + cageSpacing) - (c===0 ? 0 : cageSpacing/2);
+        [-offsetZ - 4, offsetZ + 4].forEach(z => {
+          const boya = new THREE.Mesh(buoyGeo, buoyMat);
+          boya.position.set(x, boyaY, z);
+          cageGroup.add(boya);
+        });
       }
 
       scene.add(cageGroup);
     }
 
     function createMooringLines() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlCenterId = urlParams.get('center') || 'centro-pilpilehue';
-      const isPilpilehue = urlCenterId === 'centro-pilpilehue';
+      // 5. Grilla Submarina y Líneas de Tensión
+      const gridY = -35;
+      const offsetX = 60;
+      const offsetZ = 30;
 
-      let anchorPoints = [];
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.5 });
+      const mooringMat = new THREE.LineBasicMaterial({ color: 0xd91616, linewidth: 2 }); // Red thick lines
 
-      if (isPilpilehue) {
-        // Mooring lines adapted to the 1x3 cage module
-        anchorPoints = [
-          { start: new THREE.Vector3(-12, 8, -42), end: new THREE.Vector3(-60, -25, -90) },
-          { start: new THREE.Vector3(12, 8, -42), end: new THREE.Vector3(60, -25, -90) },
-          { start: new THREE.Vector3(-12, 8, 42), end: new THREE.Vector3(-60, -25, 90) },
-          { start: new THREE.Vector3(12, 8, 42), end: new THREE.Vector3(60, -25, 90) },
-          { start: new THREE.Vector3(-12, 8, -14), end: new THREE.Vector3(-70, -25, -30) },
-          { start: new THREE.Vector3(12, 8, -14), end: new THREE.Vector3(70, -25, -30) },
-          { start: new THREE.Vector3(-12, 8, 14), end: new THREE.Vector3(-70, -25, 30) },
-          { start: new THREE.Vector3(12, 8, 14), end: new THREE.Vector3(70, -25, 30) }
-        ];
-      } else {
-        // Fallback mooring lines
-        anchorPoints = [
-          { start: new THREE.Vector3(-98, 8, -14), end: new THREE.Vector3(-140, -25, -60) },
-          { start: new THREE.Vector3(-98, 8, 14), end: new THREE.Vector3(-140, -25, 60) },
-          { start: new THREE.Vector3(98, 8, -14), end: new THREE.Vector3(140, -25, -60) },
-          { start: new THREE.Vector3(98, 8, 14), end: new THREE.Vector3(140, -25, 60) },
-          { start: new THREE.Vector3(0, 8, -14), end: new THREE.Vector3(0, -25, -80) },
-          { start: new THREE.Vector3(0, 8, 14), end: new THREE.Vector3(0, -25, 80) },
-          { start: new THREE.Vector3(-98, 8, 0), end: new THREE.Vector3(-160, -25, 0) },
-          { start: new THREE.Vector3(98, 8, 0), end: new THREE.Vector3(160, -25, 0) }
-        ];
+      // Draw underwater grid
+      for(let x = -offsetX-20; x <= offsetX+20; x+=20) {
+        const pts = [new THREE.Vector3(x, gridY, -offsetZ-20), new THREE.Vector3(x, gridY, offsetZ+20)];
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        scene.add(new THREE.Line(geo, lineMat));
+      }
+      for(let z = -offsetZ-20; z <= offsetZ+20; z+=20) {
+        const pts = [new THREE.Vector3(-offsetX-20, gridY, z), new THREE.Vector3(offsetX+20, gridY, z)];
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        scene.add(new THREE.Line(geo, lineMat));
       }
 
-      anchorPoints.forEach(pt => {
-        const points = [pt.start, pt.end];
-        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-        const lineMat = new THREE.LineBasicMaterial({ color: 0x06b6d4, linewidth: 1.5, transparent: true, opacity: 0.6 });
-        const line = new THREE.Line(lineGeo, lineMat);
-        scene.add(line);
+      // Add spheres at intersections of grid
+      const sphGeo = new THREE.SphereGeometry(1.2, 8, 8);
+      const sphMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.6 });
+      for(let x = -offsetX-20; x <= offsetX+20; x+=20) {
+        for(let z = -offsetZ-20; z <= offsetZ+20; z+=20) {
+          const mesh = new THREE.Mesh(sphGeo, sphMat);
+          mesh.position.set(x, gridY, z);
+          scene.add(mesh);
+        }
+      }
 
-        const anchorGeo = new THREE.BoxGeometry(2.5, 2.5, 2.5);
-        const anchorMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
-        const anchor = new THREE.Mesh(anchorGeo, anchorMat);
-        anchor.position.copy(pt.end);
-        scene.add(anchor);
+      // Diagonal Red Mooring Lines (from top corners outwards)
+      const topCorners = [
+        new THREE.Vector3(-offsetX, 8, -offsetZ),
+        new THREE.Vector3(offsetX, 8, -offsetZ),
+        new THREE.Vector3(-offsetX, 8, offsetZ),
+        new THREE.Vector3(offsetX, 8, offsetZ)
+      ];
+      const botAnchors = [
+        new THREE.Vector3(-offsetX-50, gridY, -offsetZ-50),
+        new THREE.Vector3(offsetX+50, gridY, -offsetZ-50),
+        new THREE.Vector3(-offsetX-50, gridY, offsetZ+50),
+        new THREE.Vector3(offsetX+50, gridY, offsetZ+50)
+      ];
+
+      topCorners.forEach((tc, idx) => {
+        const pts = [tc, botAnchors[idx]];
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        scene.add(new THREE.Line(geo, mooringMat));
+      });
+      
+      // Also add red lines from middle edges
+      const midTops = [
+        new THREE.Vector3(-offsetX, 8, 0), new THREE.Vector3(offsetX, 8, 0)
+      ];
+      const midBots = [
+        new THREE.Vector3(-offsetX-50, gridY, 0), new THREE.Vector3(offsetX+50, gridY, 0)
+      ];
+      midTops.forEach((tc, idx) => {
+        const pts = [tc, midBots[idx]];
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        scene.add(new THREE.Line(geo, mooringMat));
       });
     }
 

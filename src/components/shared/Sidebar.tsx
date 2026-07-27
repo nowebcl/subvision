@@ -4,7 +4,6 @@ import {
   LayoutDashboard, 
   Anchor, 
   LogOut,
-  Smartphone,
   MessageSquareCode,
   Shield,
   AlertTriangle,
@@ -39,8 +38,7 @@ export const Sidebar: React.FC = () => {
 
   menuItems.push(
     { id: 'findings', name: 'Hallazgos', icon: AlertTriangle, badge: 0 },
-    { id: 'multimodal', name: 'Agente IA Servirov', icon: MessageSquareCode, badge: 0 },
-    { id: 'whatsapp-sim', name: 'Simulador WhatsApp Live', icon: Smartphone, badge: 0 }
+    { id: 'multimodal', name: 'Agente IA Servirov', icon: MessageSquareCode, badge: 0 }
   );
 
   if (isAdmin) {

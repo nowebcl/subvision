@@ -8,7 +8,6 @@ import { InstallationsView } from './views/InstallationsView';
 import { FindingsView } from './views/FindingsView';
 import { MultimodalAIView } from './views/MultimodalAIView';
 import { WhatsAppAutomationsView } from './views/WhatsAppAutomationsView';
-import { WhatsAppSimulationView } from './views/WhatsAppSimulationView';
 import { AIChatbotWidget } from './components/shared/AIChatbotWidget';
 import { PhoneAlertModal } from './components/shared/PhoneAlertModal';
 import { EmailPreviewModal } from './components/shared/EmailPreviewModal';
@@ -34,8 +33,6 @@ const AppContent: React.FC = () => {
         return <MultimodalAIView />;
       case 'whatsapp-rules':
         return <WhatsAppAutomationsView />;
-      case 'whatsapp-sim':
-        return <WhatsAppSimulationView />;
       default:
         return <DashboardView />;
     }
