@@ -109,10 +109,6 @@
         <span class="text-[8px] text-slate-400 uppercase font-bold block leading-none">Módulo Estructura</span>
         <span class="font-bold">Grid 2x7 (14 Jaulas)</span>
       </div>
-      <div class="hud-card px-4 py-2 rounded-xl text-white">
-        <span class="text-[8px] text-slate-400 uppercase font-bold block leading-none">Sincronización</span>
-        <span class="font-bold text-emerald-400 animate-pulse">● Base de Datos Activa</span>
-      </div>
     </div>
 
     <!-- Right Close / Controls Instruction -->
@@ -927,12 +923,12 @@
       
       const parsedNum = parseInt(lookupId, 10);
       let index = 0;
-      if (!isNaN(parsedNum) && parsedNum >= 101 && parsedNum <= 110) {
+      if (!isNaN(parsedNum) && parsedNum >= 101 && parsedNum <= 114) {
         index = parsedNum - 101;
       }
 
       const rows = 2;
-      const cols = 5;
+      const cols = 7;
       const cageW = 22;
       const cageD = 22;
       const cageSpacing = 2; 
@@ -951,28 +947,25 @@
       if (seccion.includes('flotador') || seccion.includes('superficie')) secKey = 'flotador';
       else if (seccion.includes('lateral')) secKey = 'lateral';
 
-      // Variar la posicion con globalIdx para no superponer si hay varios en la misma jaula
-      const offsetVariations = [
-        [0, 0], [cageW/2, 0], [-cageW/2, 0], [0, cageD/2], [0, -cageD/2],
-        [cageW/2, cageD/2], [-cageW/2, -cageD/2]
-      ];
-      const varIdx = globalIdx % offsetVariations.length;
-      const vx = offsetVariations[varIdx][0];
-      const vz = offsetVariations[varIdx][1];
+      // Distribuir TODOS los hallazgos en la parte de arriba (pasarelas)
+      // para que sean fácilmente visibles desde la vista superior
+      const isXWalkway = (globalIdx % 2) === 0;
+      const side = (globalIdx % 4) < 2 ? 1 : -1;
+      
+      // Distribuir a lo largo del borde (de -10 a +10)
+      const offset = ( (globalIdx * 7) % 200 ) / 10 - 10; 
+      
+      // Pequeña variación de altura para que no colisionen si están muy cerca
+      const heightVar = 9.5 + (globalIdx % 5) * 0.4; 
 
-      if (secKey === 'flotador') {
-        // En la pasarela
-        return new THREE.Vector3(cx + vx, 8.5, cz + vz);
-      } else if (secKey === 'lateral') {
-        // Pared de la malla (Y entre 8 y -4)
-        return new THREE.Vector3(cx + vx, 2, cz + vz);
+      if (isXWalkway) {
+         // Borde superior o inferior de la jaula
+         return new THREE.Vector3(cx + offset, heightVar, cz + (cageD/2 + cageSpacing/2) * side);
       } else {
-        // Fondo (Embudo inferior, Y = -12)
-        // El embudo se reduce (bW = cageW * 0.4 = 8.8)
-        return new THREE.Vector3(cx + vx * 0.4, -12, cz + vz * 0.4);
+         // Borde izquierdo o derecho de la jaula
+         return new THREE.Vector3(cx + (cageW/2 + cageSpacing/2) * side, heightVar, cz + offset);
       }
     }
-
     async function loadReportsAndCreateMarkers() {
       const savedUser = localStorage.getItem('subvision_current_user');
       let email = 'operador@servirov.cl';
@@ -1148,7 +1141,7 @@
 
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
       // Camera angle adjusted to match the oblique top-down screenshot perspective
-      camera.position.set(70, 75, 110);
+      camera.position.set(100, 90, 140);
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setPixelRatio(window.devicePixelRatio);
@@ -1160,7 +1153,7 @@
       controls.dampingFactor = 0.05;
       controls.maxPolarAngle = Math.PI / 2 - 0.05;
       controls.minDistance = 20;
-      controls.maxDistance = 400;
+      controls.maxDistance = 500;
 
       // Initialize raycaster and mouse vector
       raycaster = new THREE.Raycaster();
@@ -1192,18 +1185,8 @@
       gridHelper.position.y = -50;
       scene.add(gridHelper);
 
-      const compassGeo = new THREE.PlaneGeometry(36, 36);
-      const compassTexture = createCompassTexture();
-      const compassMat = new THREE.MeshBasicMaterial({
-        map: compassTexture,
-        transparent: true,
-        opacity: 0.85,
-        side: THREE.DoubleSide
-      });
-      const compassMesh = new THREE.Mesh(compassGeo, compassMat);
-      compassMesh.rotation.x = -Math.PI / 2;
-      compassMesh.position.set(-80, 7.9, -50);
-      scene.add(compassMesh);
+      
+
 
       const planeGeo = new THREE.PlaneGeometry(1200, 1200);
       const planeMat = new THREE.MeshStandardMaterial({ color: 0x05122b, roughness: 0.85, metalness: 0.12 });
@@ -1224,222 +1207,366 @@
     function createCages() {
       cageGroup = new THREE.Group();
 
-      const rows = 2;
-      const cols = 5;
-      const cageW = 22;
-      const cageD = 22;
-      const cageSpacing = 2; 
-      
-      const offsetX = (cols * cageW + (cols-1)*cageSpacing) / 2;
-      const offsetZ = (rows * cageD + (rows-1)*cageSpacing) / 2;
+      var rows = 2, cols = 7, cageW = 22, cageD = 22, cageSpacing = 2;
+      var offsetX = (cols * cageW + (cols-1)*cageSpacing) / 2;
+      var offsetZ = (rows * cageD + (rows-1)*cageSpacing) / 2;
 
-      const walkwayMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-      const walkwayThick = 1.5;
+      // WALKWAYS - dark gray beams
+      var walkwayMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, roughness: 0.9 });
+      var walkwayThick = 1.8;
+      var postMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e });
+      var postGeo = new THREE.CylinderGeometry(0.15, 0.15, 3, 8);
 
-      // 1. Walkways (Marco de Superficie)
-      for (let r = 0; r <= rows; r++) {
-        const z = -offsetZ + r * (cageD + cageSpacing) - (r===0 ? 0 : cageSpacing/2);
-        const geo = new THREE.BoxGeometry(offsetX * 2, walkwayThick, walkwayThick);
-        const mesh = new THREE.Mesh(geo, walkwayMat);
-        mesh.position.set(0, 8, z);
-        cageGroup.add(mesh);
+      for (var wr = 0; wr <= rows; wr++) {
+        var wz = -offsetZ + wr * (cageD + cageSpacing);
+        if (wr > 0 && wr < rows) wz -= cageSpacing/2;
+        var wgeo = new THREE.BoxGeometry(offsetX * 2 + walkwayThick, walkwayThick, walkwayThick);
+        var wmesh = new THREE.Mesh(wgeo, walkwayMat);
+        wmesh.position.set(0, 8, wz);
+        cageGroup.add(wmesh);
       }
-      for (let c = 0; c <= cols; c++) {
-        const x = -offsetX + c * (cageW + cageSpacing) - (c===0 ? 0 : cageSpacing/2);
-        const geo = new THREE.BoxGeometry(walkwayThick, walkwayThick, offsetZ * 2);
-        const mesh = new THREE.Mesh(geo, walkwayMat);
-        mesh.position.set(x, 8, 0);
-        cageGroup.add(mesh);
+      for (var wc = 0; wc <= cols; wc++) {
+        var wx = -offsetX + wc * (cageW + cageSpacing);
+        if (wc > 0 && wc < cols) wx -= cageSpacing/2;
+        var wgeo2 = new THREE.BoxGeometry(walkwayThick, walkwayThick, offsetZ * 2 + walkwayThick);
+        var wmesh2 = new THREE.Mesh(wgeo2, walkwayMat);
+        wmesh2.position.set(wx, 8, 0);
+        cageGroup.add(wmesh2);
       }
 
-      // Materiales
-      const netMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false });
-      const netWireMat = new THREE.LineBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.6 });
-      const pajareraMat = new THREE.LineBasicMaterial({ color: 0x111111, linewidth: 2 });
-      const weightMat = new THREE.MeshStandardMaterial({ color: 0xd91616, roughness: 0.5 });
-      const buoyMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 });
+      // Handrail posts at every intersection
+      for (var pr = 0; pr <= rows; pr++) {
+        for (var pc = 0; pc <= cols; pc++) {
+          var pz = -offsetZ + pr * (cageD + cageSpacing);
+          if (pr > 0 && pr < rows) pz -= cageSpacing/2;
+          var px = -offsetX + pc * (cageW + cageSpacing);
+          if (pc > 0 && pc < cols) px -= cageSpacing/2;
+          var post = new THREE.Mesh(postGeo, postMat);
+          post.position.set(px, 8 + walkwayThick/2 + 1.5, pz);
+          cageGroup.add(post);
+        }
+      }
 
-      // Geometrias reusables
-      const weightGeo = new THREE.ConeGeometry(0.8, 1.5, 8);
-      weightGeo.translate(0, -0.75, 0);
-      const buoyGeo = new THREE.CylinderGeometry(1.5, 1.0, 2.5, 16);
-      
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const cx = -offsetX + cageW/2 + c*(cageW+cageSpacing);
-          const cz = -offsetZ + cageD/2 + r*(cageD+cageSpacing);
+      // MATERIALS
+      var netMat = new THREE.MeshPhysicalMaterial({ color: 0x1e3a6e, transmission: 0.5, opacity: 0.7, transparent: true, roughness: 0.2, side: THREE.DoubleSide, depthWrite: false });
+      var netWireMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+      var pajareraMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+      var loberiaMat = new THREE.MeshPhysicalMaterial({ color: 0x1a3a2e, transmission: 0.8, opacity: 0.35, transparent: true, side: THREE.DoubleSide, roughness: 0.5, depthWrite: false });
+      var loberiaWireMat = new THREE.LineBasicMaterial({ color: 0x1a3a2e });
+      var weightMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.5 });
+      var mortandadMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, side: THREE.DoubleSide });
+      var blackRingMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+      var weightGeo = new THREE.BoxGeometry(1.2, 1.5, 1.2);
 
-          // 2. Red Pajarera (Techo Piramidal)
-          const pGeo = new THREE.BufferGeometry();
-          const pHeight = 4;
-          const pyY = 8 + walkwayThick/2;
-          const pPts = [
-            new THREE.Vector3(-cageW/2, pyY, -cageD/2), new THREE.Vector3(0, pyY+pHeight, 0),
-            new THREE.Vector3(cageW/2, pyY, -cageD/2), new THREE.Vector3(0, pyY+pHeight, 0),
-            new THREE.Vector3(cageW/2, pyY, cageD/2), new THREE.Vector3(0, pyY+pHeight, 0),
-            new THREE.Vector3(-cageW/2, pyY, cageD/2), new THREE.Vector3(0, pyY+pHeight, 0),
-            // base rectangle
-            new THREE.Vector3(-cageW/2, pyY, -cageD/2), new THREE.Vector3(cageW/2, pyY, -cageD/2),
-            new THREE.Vector3(cageW/2, pyY, -cageD/2), new THREE.Vector3(cageW/2, pyY, cageD/2),
-            new THREE.Vector3(cageW/2, pyY, cageD/2), new THREE.Vector3(-cageW/2, pyY, cageD/2),
-            new THREE.Vector3(-cageW/2, pyY, cageD/2), new THREE.Vector3(-cageW/2, pyY, -cageD/2),
-          ];
-          pGeo.setFromPoints(pPts);
-          const pLine = new THREE.LineSegments(pGeo, pajareraMat);
-          pLine.position.set(cx, 0, cz);
-          cageGroup.add(pLine);
+      for (var cr = 0; cr < rows; cr++) {
+        for (var cc = 0; cc < cols; cc++) {
+          var cx = -offsetX + cageW/2 + cc*(cageW+cageSpacing);
+          var cz = -offsetZ + cageD/2 + cr*(cageD+cageSpacing);
 
-          // 3. Red Pecera (Caja + Embudo Inferior)
-          const netDepth1 = 12; // straight part
-          const netDepth2 = 8;  // funnel part
-          const bW = cageW * 0.4; // bottom width of funnel
-          
-          const netGeom = new THREE.BufferGeometry();
-          const v = [
-            // Top rect (Y = 8)
-            -cageW/2, 8, -cageD/2,   cageW/2, 8, -cageD/2,   cageW/2, 8, cageD/2,   -cageW/2, 8, cageD/2,
-            // Mid rect (Y = 8 - netDepth1)
-            -cageW/2, 8-netDepth1, -cageD/2,   cageW/2, 8-netDepth1, -cageD/2,   cageW/2, 8-netDepth1, cageD/2,   -cageW/2, 8-netDepth1, cageD/2,
-            // Bot rect (Y = 8 - netDepth1 - netDepth2)
-            -bW/2, 8-netDepth1-netDepth2, -bW/2,   bW/2, 8-netDepth1-netDepth2, -bW/2,   bW/2, 8-netDepth1-netDepth2, bW/2,   -bW/2, 8-netDepth1-netDepth2, bW/2
-          ];
-          const vertices = new Float32Array(v);
-          const indices = [
-            0,1,5, 0,5,4, 1,2,6, 1,6,5, 2,3,7, 2,7,6, 3,0,4, 3,4,7, // top walls
-            4,5,9, 4,9,8, 5,6,10, 5,10,9, 6,7,11, 6,11,10, 7,4,8, 7,8,11, // funnel walls
-            8,9,10, 8,10,11 // bottom floor
-          ];
-          netGeom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-          netGeom.setIndex(indices);
-          netGeom.computeVertexNormals();
-          
-          const netMesh = new THREE.Mesh(netGeom, netMat);
-          netMesh.position.set(cx, 0, cz);
-          cageGroup.add(netMesh);
-
-          const edges = new THREE.EdgesGeometry(netGeom);
-          const line = new THREE.LineSegments(edges, netWireMat);
-          line.position.set(cx, 0, cz);
-          cageGroup.add(line);
-
-          // 4. Pesos (Conos Rojos) en el borde inferior del embudo
-          const pts = [
-            new THREE.Vector3(-bW/2, 8-netDepth1-netDepth2, -bW/2),
-            new THREE.Vector3(bW/2, 8-netDepth1-netDepth2, -bW/2),
-            new THREE.Vector3(bW/2, 8-netDepth1-netDepth2, bW/2),
-            new THREE.Vector3(-bW/2, 8-netDepth1-netDepth2, bW/2)
-          ];
-          for(let i=0; i<4; i++) {
-            const pA = pts[i];
-            const pB = pts[(i+1)%4];
-            // put 3 weights along each edge
-            for(let step=0; step<=3; step++) {
-              if (step===3 && i<3) continue; // avoid exact overlap at corners
-              const wPos = new THREE.Vector3().lerpVectors(pA, pB, step/3);
-              const wMesh = new THREE.Mesh(weightGeo, weightMat);
-              wMesh.position.set(cx + wPos.x, wPos.y, cz + wPos.z);
-              wMesh.rotation.x = Math.PI; // point down
-              cageGroup.add(wMesh);
+          // PAJARERA - Dense pyramid wireframe
+          var pyY = 8 + walkwayThick/2;
+          var apexY = pyY + 5;
+          var hw = cageW/2, hd = cageD/2;
+          var pjPts = [];
+          // 4 corner-to-apex edges
+          var corners = [[-hw,pyY,-hd],[hw,pyY,-hd],[hw,pyY,hd],[-hw,pyY,hd]];
+          var apex = [0, apexY, 0];
+          for (var ci = 0; ci < 4; ci++) {
+            pjPts.push(new THREE.Vector3(corners[ci][0],corners[ci][1],corners[ci][2]));
+            pjPts.push(new THREE.Vector3(apex[0],apex[1],apex[2]));
+          }
+          // midpoint-to-apex edges
+          for (var mi = 0; mi < 4; mi++) {
+            var ni = (mi+1)%4;
+            var mx = (corners[mi][0]+corners[ni][0])/2;
+            var mz = (corners[mi][2]+corners[ni][2])/2;
+            pjPts.push(new THREE.Vector3(mx,pyY,mz));
+            pjPts.push(new THREE.Vector3(apex[0],apex[1],apex[2]));
+          }
+          // quarter-to-apex edges
+          for (var qi = 0; qi < 4; qi++) {
+            var qni = (qi+1)%4;
+            for (var qf = 1; qf <= 3; qf += 2) {
+              var qx = corners[qi][0] + (corners[qni][0]-corners[qi][0])*qf/4;
+              var qz = corners[qi][2] + (corners[qni][2]-corners[qi][2])*qf/4;
+              pjPts.push(new THREE.Vector3(qx,pyY,qz));
+              pjPts.push(new THREE.Vector3(apex[0],apex[1],apex[2]));
             }
           }
+          // base rectangle
+          for (var bi = 0; bi < 4; bi++) {
+            var bni = (bi+1)%4;
+            pjPts.push(new THREE.Vector3(corners[bi][0],corners[bi][1],corners[bi][2]));
+            pjPts.push(new THREE.Vector3(corners[bni][0],corners[bni][1],corners[bni][2]));
+          }
+          // horizontal ring at half height
+          var midY = (pyY + apexY) / 2;
+          var midScale = 0.5;
+          var midCorners = corners.map(function(co) { return [co[0]*midScale, midY, co[2]*midScale]; });
+          for (var ri = 0; ri < 4; ri++) {
+            var rni = (ri+1)%4;
+            pjPts.push(new THREE.Vector3(midCorners[ri][0],midCorners[ri][1],midCorners[ri][2]));
+            pjPts.push(new THREE.Vector3(midCorners[rni][0],midCorners[rni][1],midCorners[rni][2]));
+          }
+          var pjGeo = new THREE.BufferGeometry().setFromPoints(pjPts);
+          var pjLine = new THREE.LineSegments(pjGeo, pajareraMat);
+          pjLine.position.set(cx, 0, cz);
+          cageGroup.add(pjLine);
 
-          // Labels
-          const lGeo = new THREE.PlaneGeometry(8, 4);
-          const idStr = (100 + (r*cols + c + 1)).toString();
-          const lMat = new THREE.MeshBasicMaterial({ map: createLabelTexture(idStr), side: THREE.DoubleSide, transparent: true });
-          const lMesh = new THREE.Mesh(lGeo, lMat);
+          // PECERA - Box (Y:8 to -12, height=20) with edge lines
+          var boxGeo = new THREE.BoxGeometry(cageW, 20, cageD);
+          var boxMesh = new THREE.Mesh(boxGeo, netMat);
+          boxMesh.position.set(cx, -2, cz);
+          cageGroup.add(boxMesh);
+          var boxEdges = new THREE.EdgesGeometry(boxGeo);
+          var boxLines = new THREE.LineSegments(boxEdges, netWireMat);
+          boxLines.position.set(cx, -2, cz);
+          cageGroup.add(boxLines);
+
+          // Subdivision lines on faces (3 vertical + 3 horizontal per face)
+          var subPts = [];
+          for (var si = 1; si <= 3; si++) {
+            var sf = si/4;
+            // Front/back face vertical lines
+            subPts.push(new THREE.Vector3(-hw + cageW*sf, 8, -hd), new THREE.Vector3(-hw + cageW*sf, -12, -hd));
+            subPts.push(new THREE.Vector3(-hw + cageW*sf, 8, hd), new THREE.Vector3(-hw + cageW*sf, -12, hd));
+            // Left/right face vertical lines
+            subPts.push(new THREE.Vector3(-hw, 8, -hd + cageD*sf), new THREE.Vector3(-hw, -12, -hd + cageD*sf));
+            subPts.push(new THREE.Vector3(hw, 8, -hd + cageD*sf), new THREE.Vector3(hw, -12, -hd + cageD*sf));
+            // Horizontal lines on all 4 faces
+            var hy = 8 - 20*sf;
+            subPts.push(new THREE.Vector3(-hw, hy, -hd), new THREE.Vector3(hw, hy, -hd));
+            subPts.push(new THREE.Vector3(-hw, hy, hd), new THREE.Vector3(hw, hy, hd));
+            subPts.push(new THREE.Vector3(-hw, hy, -hd), new THREE.Vector3(-hw, hy, hd));
+            subPts.push(new THREE.Vector3(hw, hy, -hd), new THREE.Vector3(hw, hy, hd));
+          }
+          var subGeo = new THREE.BufferGeometry().setFromPoints(subPts);
+          var subLines = new THREE.LineSegments(subGeo, netWireMat);
+          subLines.position.set(cx, 0, cz);
+          cageGroup.add(subLines);
+
+          // MORTANDAD SYSTEM
+          var ringGeo = new THREE.TorusGeometry(3.5, 0.35, 8, 24);
+          var ringMesh = new THREE.Mesh(ringGeo, blackRingMat);
+          ringMesh.rotation.x = Math.PI / 2;
+          ringMesh.position.set(cx, 8, cz);
+          cageGroup.add(ringMesh);
+
+          var crossGeo = new THREE.CylinderGeometry(0.2, 0.2, 7);
+          var cross1 = new THREE.Mesh(crossGeo, blackRingMat);
+          cross1.rotation.z = Math.PI / 2;
+          cross1.position.set(cx, 8, cz);
+          cageGroup.add(cross1);
+          var cross2 = new THREE.Mesh(crossGeo, blackRingMat);
+          cross2.rotation.x = Math.PI / 2;
+          cross2.position.set(cx, 8, cz);
+          cageGroup.add(cross2);
+
+          var tubeGeo = new THREE.CylinderGeometry(0.4, 0.4, 18, 8);
+          var tubeMesh = new THREE.Mesh(tubeGeo, mortandadMat);
+          tubeMesh.position.set(cx, -1, cz);
+          cageGroup.add(tubeMesh);
+
+          var funnelGeo = new THREE.SphereGeometry(0.8, 16, 16);
+          var funnelMesh = new THREE.Mesh(funnelGeo, mortandadMat);
+          funnelMesh.position.set(cx, -10, cz);
+          cageGroup.add(funnelMesh);
+
+          // LABEL
+          var lGeo = new THREE.PlaneGeometry(12, 6);
+          var idStr = (100 + (cr*cols + cc + 1)).toString();
+          var lMat2 = new THREE.MeshBasicMaterial({ map: createLabelTexture(idStr), side: THREE.DoubleSide, transparent: true });
+          var lMesh = new THREE.Mesh(lGeo, lMat2);
           lMesh.rotation.x = -Math.PI / 2;
           lMesh.position.set(cx, 8.5, cz);
           cageGroup.add(lMesh);
         }
       }
 
-      // 6. Boyas Perimetrales (Cubetas naranjas)
-      const boyaY = 7.5;
-      for (let r = 0; r <= rows; r++) {
-        const z = -offsetZ + r * (cageD + cageSpacing) - (r===0 ? 0 : cageSpacing/2);
-        [-offsetX - 4, offsetX + 4].forEach(x => {
-          const boya = new THREE.Mesh(buoyGeo, buoyMat);
-          boya.position.set(x, boyaY, z);
-          cageGroup.add(boya);
-        });
+      // LOBERIA - Wireframe envelope around entire module
+      var loberiaW = offsetX * 2 + 10;
+      var loberiaD = offsetZ * 2 + 10;
+      var loberiaH = 28;
+
+      var lobGeo = new THREE.BoxGeometry(loberiaW, loberiaH, loberiaD);
+      var lobMesh = new THREE.Mesh(lobGeo, loberiaMat);
+      lobMesh.position.set(0, -6, 0);
+      cageGroup.add(lobMesh);
+      var lobEdges = new THREE.EdgesGeometry(lobGeo);
+      var lobLines = new THREE.LineSegments(lobEdges, loberiaWireMat);
+      lobLines.position.set(0, -6, 0);
+      cageGroup.add(lobLines);
+
+      // Lobería subdivision lines
+      var lobPts = [];
+      for (var li = 1; li <= 6; li++) {
+        var lf = li/7;
+        var lvy = 8 - loberiaH*lf;
+        lobPts.push(new THREE.Vector3(-loberiaW/2, lvy, loberiaD/2), new THREE.Vector3(loberiaW/2, lvy, loberiaD/2));
+        lobPts.push(new THREE.Vector3(-loberiaW/2, lvy, -loberiaD/2), new THREE.Vector3(loberiaW/2, lvy, -loberiaD/2));
+        lobPts.push(new THREE.Vector3(loberiaW/2, lvy, -loberiaD/2), new THREE.Vector3(loberiaW/2, lvy, loberiaD/2));
+        lobPts.push(new THREE.Vector3(-loberiaW/2, lvy, -loberiaD/2), new THREE.Vector3(-loberiaW/2, lvy, loberiaD/2));
       }
-      for (let c = 0; c <= cols; c++) {
-        const x = -offsetX + c * (cageW + cageSpacing) - (c===0 ? 0 : cageSpacing/2);
-        [-offsetZ - 4, offsetZ + 4].forEach(z => {
-          const boya = new THREE.Mesh(buoyGeo, buoyMat);
-          boya.position.set(x, boyaY, z);
-          cageGroup.add(boya);
-        });
+      for (var lvi = 1; lvi <= 4; lvi++) {
+        var lvf = lvi/5;
+        var lvx = -loberiaW/2 + loberiaW*lvf;
+        lobPts.push(new THREE.Vector3(lvx, 8, loberiaD/2), new THREE.Vector3(lvx, -20, loberiaD/2));
+        lobPts.push(new THREE.Vector3(lvx, 8, -loberiaD/2), new THREE.Vector3(lvx, -20, -loberiaD/2));
+      }
+      for (var lhi = 1; lhi <= 2; lhi++) {
+        var lhf = lhi/3;
+        var lhz = -loberiaD/2 + loberiaD*lhf;
+        lobPts.push(new THREE.Vector3(loberiaW/2, 8, lhz), new THREE.Vector3(loberiaW/2, -20, lhz));
+        lobPts.push(new THREE.Vector3(-loberiaW/2, 8, lhz), new THREE.Vector3(-loberiaW/2, -20, lhz));
+      }
+      var lobSubGeo = new THREE.BufferGeometry().setFromPoints(lobPts);
+      cageGroup.add(new THREE.LineSegments(lobSubGeo, loberiaWireMat));
+
+      // Red weights around lobería bottom
+      for (var lwx = -loberiaW/2; lwx <= loberiaW/2; lwx += 4) {
+        var w1 = new THREE.Mesh(weightGeo, weightMat); w1.position.set(lwx, -20, -loberiaD/2); cageGroup.add(w1);
+        var w2 = new THREE.Mesh(weightGeo, weightMat); w2.position.set(lwx, -20, loberiaD/2); cageGroup.add(w2);
+      }
+      for (var lwz = -loberiaD/2 + 4; lwz < loberiaD/2; lwz += 4) {
+        var w3 = new THREE.Mesh(weightGeo, weightMat); w3.position.set(-loberiaW/2, -20, lwz); cageGroup.add(w3);
+        var w4 = new THREE.Mesh(weightGeo, weightMat); w4.position.set(loberiaW/2, -20, lwz); cageGroup.add(w4);
       }
 
       scene.add(cageGroup);
     }
 
     function createMooringLines() {
-      // 5. Grilla Submarina y Líneas de Tensión
-      const gridY = -35;
-      const offsetX = 60;
-      const offsetZ = 30;
+      var gridY = -50;
+      var rows = 2, cols = 7, cageW = 22, cageD = 22, cageSpacing = 2;
+      var offsetX = (cols * cageW + (cols-1)*cageSpacing) / 2;
+      var offsetZ = (rows * cageD + (rows-1)*cageSpacing) / 2;
 
-      const lineMat = new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.5 });
-      const mooringMat = new THREE.LineBasicMaterial({ color: 0xd91616, linewidth: 2 }); // Red thick lines
+      var poleMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+      var coneMat = new THREE.MeshStandardMaterial({ color: 0xd97706 });
+      var coneEdgeMat = new THREE.LineBasicMaterial({ color: 0x92400e });
+      var floatMat = new THREE.MeshStandardMaterial({ color: 0xfafafa });
+      var anchorMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.9 });
+      var anchorEdgeMat = new THREE.LineBasicMaterial({ color: 0x9ca3af });
+      var blackCableMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+      var redCableMat = new THREE.LineBasicMaterial({ color: 0xcc2222 });
+      var grayCableMat = new THREE.LineBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.6 });
 
-      // Draw underwater grid
-      for(let x = -offsetX-20; x <= offsetX+20; x+=20) {
-        const pts = [new THREE.Vector3(x, gridY, -offsetZ-20), new THREE.Vector3(x, gridY, offsetZ+20)];
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        scene.add(new THREE.Line(geo, lineMat));
-      }
-      for(let z = -offsetZ-20; z <= offsetZ+20; z+=20) {
-        const pts = [new THREE.Vector3(-offsetX-20, gridY, z), new THREE.Vector3(offsetX+20, gridY, z)];
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        scene.add(new THREE.Line(geo, lineMat));
-      }
-
-      // Add spheres at intersections of grid
-      const sphGeo = new THREE.SphereGeometry(1.2, 8, 8);
-      const sphMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.6 });
-      for(let x = -offsetX-20; x <= offsetX+20; x+=20) {
-        for(let z = -offsetZ-20; z <= offsetZ+20; z+=20) {
-          const mesh = new THREE.Mesh(sphGeo, sphMat);
-          mesh.position.set(x, gridY, z);
-          scene.add(mesh);
-        }
-      }
-
-      // Diagonal Red Mooring Lines (from top corners outwards)
-      const topCorners = [
-        new THREE.Vector3(-offsetX, 8, -offsetZ),
-        new THREE.Vector3(offsetX, 8, -offsetZ),
-        new THREE.Vector3(-offsetX, 8, offsetZ),
-        new THREE.Vector3(offsetX, 8, offsetZ)
-      ];
-      const botAnchors = [
-        new THREE.Vector3(-offsetX-50, gridY, -offsetZ-50),
-        new THREE.Vector3(offsetX+50, gridY, -offsetZ-50),
-        new THREE.Vector3(-offsetX-50, gridY, offsetZ+50),
-        new THREE.Vector3(offsetX+50, gridY, offsetZ+50)
-      ];
-
-      topCorners.forEach((tc, idx) => {
-        const pts = [tc, botAnchors[idx]];
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        scene.add(new THREE.Line(geo, mooringMat));
-      });
+      var poleGeo = new THREE.CylinderGeometry(0.1, 0.1, 30, 8);
+      var tripodLegGeo = new THREE.CylinderGeometry(0.1, 0.1, 14, 6);
+      var floatGeo = new THREE.SphereGeometry(1.5, 12, 12);
       
-      // Also add red lines from middle edges
-      const midTops = [
-        new THREE.Vector3(-offsetX, 8, 0), new THREE.Vector3(offsetX, 8, 0)
-      ];
-      const midBots = [
-        new THREE.Vector3(-offsetX-50, gridY, 0), new THREE.Vector3(offsetX+50, gridY, 0)
-      ];
-      midTops.forEach((tc, idx) => {
-        const pts = [tc, midBots[idx]];
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        scene.add(new THREE.Line(geo, mooringMat));
+      // Nueva boya cilíndrica
+      var cylindricalBuoyGeo = new THREE.CylinderGeometry(1.2, 1.2, 3.5, 16);
+      cylindricalBuoyGeo.rotateZ(Math.PI / 2); // Acostada horizontalmente
+      var buoyMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.3, metalness: 0.1 });
+      var buoyEdgeMat = new THREE.LineBasicMaterial({ color: 0x9ca3af });
+      var buoyEdgesGeo = new THREE.EdgesGeometry(cylindricalBuoyGeo);
+
+      var anchorGeo = new THREE.BoxGeometry(5, 5, 5);
+      var anchorEdgesGeo = new THREE.EdgesGeometry(anchorGeo);
+
+      // Pole positions: along long sides and short sides
+      var polePositions = [];
+      var poleDist = 28;
+      for (var pc = 0; pc <= cols; pc++) {
+        var ppx = -offsetX + pc * (cageW + cageSpacing);
+        if (pc > 0 && pc < cols) ppx -= cageSpacing/2;
+        polePositions.push(new THREE.Vector3(ppx, 0, -offsetZ - poleDist));
+        polePositions.push(new THREE.Vector3(ppx, 0, offsetZ + poleDist));
+      }
+      // Poles on the left and right sides (center)
+      polePositions.push(new THREE.Vector3(-offsetX - poleDist, 0, 0));
+      polePositions.push(new THREE.Vector3(offsetX + poleDist, 0, 0));
+      
+      // Poles extending left/right from the 4 corners
+      polePositions.push(new THREE.Vector3(-offsetX - poleDist, 0, -offsetZ));
+      polePositions.push(new THREE.Vector3(-offsetX - poleDist, 0, offsetZ));
+      polePositions.push(new THREE.Vector3(offsetX + poleDist, 0, -offsetZ));
+      polePositions.push(new THREE.Vector3(offsetX + poleDist, 0, offsetZ));
+
+      // Anchor blocks on seabed
+      var anchorPositions = [];
+      var anchorDist = 90;
+      for (var ac = 0; ac <= cols; ac++) {
+        var aax = -offsetX + ac * (cageW + cageSpacing);
+        if (ac > 0 && ac < cols) aax -= cageSpacing/2;
+        anchorPositions.push(new THREE.Vector3(aax, gridY, -offsetZ - anchorDist));
+        anchorPositions.push(new THREE.Vector3(aax, gridY, offsetZ + anchorDist));
+      }
+      // Anchors on the left and right sides (center)
+      anchorPositions.push(new THREE.Vector3(-offsetX - anchorDist, gridY, 0));
+      anchorPositions.push(new THREE.Vector3(offsetX + anchorDist, gridY, 0));
+      
+      // Anchors extending left/right from the 4 corners
+      anchorPositions.push(new THREE.Vector3(-offsetX - anchorDist, gridY, -offsetZ));
+      anchorPositions.push(new THREE.Vector3(-offsetX - anchorDist, gridY, offsetZ));
+      anchorPositions.push(new THREE.Vector3(offsetX + anchorDist, gridY, -offsetZ));
+      anchorPositions.push(new THREE.Vector3(offsetX + anchorDist, gridY, offsetZ));
+
+      // Render anchors
+      anchorPositions.forEach(function(apos) {
+        var anchor = new THREE.Mesh(anchorGeo, anchorMat);
+        anchor.position.copy(apos);
+        scene.add(anchor);
+        var aedg = new THREE.LineSegments(anchorEdgesGeo, anchorEdgeMat);
+        aedg.position.copy(apos);
+        scene.add(aedg);
       });
+
+      // Render poles with tripods, cones, floats, and cables
+      polePositions.forEach(function(ppos, pidx) {
+        var pg = new THREE.Group();
+
+        var mainPole = new THREE.Mesh(poleGeo, poleMat);
+        mainPole.position.set(0, -7, 0);
+        pg.add(mainPole);
+
+        // Cylindrical Buoy at the top (water surface level)
+        var cBuoy = new THREE.Mesh(cylindricalBuoyGeo, buoyMat);
+        cBuoy.position.set(0, 8, 0); // At the top of the pole
+        pg.add(cBuoy);
+        var cBuoyLine = new THREE.LineSegments(buoyEdgesGeo, buoyEdgeMat);
+        cBuoyLine.position.set(0, 8, 0);
+        pg.add(cBuoyLine);
+
+        // Tripod legs
+        for (var ti = 0; ti < 3; ti++) {
+          var ta = (ti / 3) * Math.PI * 2;
+          var tleg = new THREE.Mesh(tripodLegGeo, poleMat);
+          tleg.position.set(Math.cos(ta) * 5, -18, Math.sin(ta) * 5);
+          tleg.rotation.x = Math.sin(ta) * 0.7;
+          tleg.rotation.z = -Math.cos(ta) * 0.7;
+          pg.add(tleg);
+        }
+
+
+        pg.position.copy(ppos);
+        scene.add(pg);
+
+        // Cables
+        var clX = Math.max(-offsetX, Math.min(offsetX, ppos.x));
+        var clZ = Math.max(-offsetZ, Math.min(offsetZ, ppos.z));
+        var wkPt = new THREE.Vector3(clX, 8, clZ);
+        var pTop = new THREE.Vector3(ppos.x, 8, ppos.z);
+        var pBtm = new THREE.Vector3(ppos.x, -22, ppos.z);
+
+        // Black cables: walkway -> pole
+        scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([wkPt, pTop]), blackCableMat));
+
+        // Gray cables to anchors
+        if (pidx < anchorPositions.length) {
+          scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([pTop, anchorPositions[pidx]]), grayCableMat));
+        }
+      });
+
+      // Seabed grid lines
+      var seaLineMat = new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.3 });
+      for (var sgx = -140; sgx <= 140; sgx += 20) {
+        scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(sgx, gridY, -110), new THREE.Vector3(sgx, gridY, 110)]), seaLineMat));
+      }
+      for (var sgz = -110; sgz <= 110; sgz += 20) {
+        scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-140, gridY, sgz), new THREE.Vector3(140, gridY, sgz)]), seaLineMat));
+      }
     }
 
     function onPointerMove(event) {

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls, Html, Edges } from '@react-three/drei';
 import * as THREE from 'three';
 import { ShieldAlert, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 
@@ -17,38 +17,38 @@ export interface FindingMarker {
 const defaultMarkers: FindingMarker[] = [
   {
     id: 1,
-    position: [12.5, -40, 6.5], 
+    position: [12.5, -20, 35], 
     title: 'Vértice Lobera Sur-Este',
-    depth: '-40.0m',
+    depth: '-20.0m',
     status: 'optimal',
     description: 'Tensión de red envolvente óptima en vértice de fondo.',
     component: 'Red Lobera Envolvente'
   },
   {
     id: 2,
-    position: [-5.5, -15, 5], 
-    title: 'Pared Oeste Pecera 101',
-    depth: '-15.0m',
+    position: [-5.5, -18.5, 16.5], 
+    title: 'Colector de Mortandad',
+    depth: '-18.5m',
     status: 'warning',
-    description: 'Desgaste moderado y presencia de biofouling.',
-    component: 'Red Pecera Interior'
+    description: 'Acumulación moderada detectada en embudo colector.',
+    component: 'Sistema de Mortandad'
   },
   {
     id: 3,
-    position: [0, -40, -6.5],
+    position: [0, -20, -35],
     title: 'Fondo Lobera Norte',
-    depth: '-40.0m',
+    depth: '-20.0m',
     status: 'critical',
     description: 'Rotura detectada en el paño de fondo envolvente.',
     component: 'Red Lobera Envolvente'
   },
   {
     id: 4,
-    position: [-12.5, 0, -6.5],
-    title: 'Tensión Fondeo Norte-Oeste',
-    depth: '0.0m',
+    position: [-60, -50, -33],
+    title: 'Anclaje Fondeo Nor-Oeste',
+    depth: '-50.0m',
     status: 'optimal',
-    description: 'Línea de fondeo operando dentro de los rangos de tensión.',
+    description: 'Bloque de concreto (muerto) estable y sin desplazamiento.',
     component: 'Sistema de Fondeo'
   }
 ];
@@ -58,9 +58,9 @@ const WaterPlane = () => {
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
       <planeGeometry args={[1000, 1000]} />
       <meshBasicMaterial 
-        color="#0284c7" 
+        color="#0ea5e9" 
         transparent 
-        opacity={0.25} 
+        opacity={0.15} 
         side={THREE.DoubleSide} 
         depthWrite={false} 
       />
@@ -98,131 +98,259 @@ const MarkerLabel = ({ marker, onClick, isActive }: { marker: FindingMarker, onC
   );
 };
 
+const Cage = ({ x, z }: { x: number, z: number }) => {
+  return (
+    <group>
+      {/* Top Box part (Y: 0 to -12) */}
+      <mesh position={[x, -6, z]}>
+        <boxGeometry args={[10, 12, 10]} />
+        <meshPhysicalMaterial color="#1e40af" transmission={0.6} opacity={0.8} transparent roughness={0.2} side={THREE.DoubleSide} />
+        <Edges scale={1.0} threshold={15} color="#000000" />
+      </mesh>
+      
+      {/* Bottom Pyramid part (Y: -12 to -18) */}
+      <mesh position={[x, -15, z]} rotation={[0, Math.PI / 4, 0]}>
+        <cylinderGeometry args={[7.07, 1, 6, 4]} />
+        <meshPhysicalMaterial color="#1e40af" transmission={0.6} opacity={0.8} transparent roughness={0.2} side={THREE.DoubleSide} />
+        <Edges scale={1.0} threshold={15} color="#000000" />
+      </mesh>
+      
+      {/* Mortandad Top Ring */}
+      <mesh position={[x, 1, z]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[1.5, 0.15, 8, 24]} />
+        <meshStandardMaterial color="#0f172a" />
+      </mesh>
+      <mesh position={[x, 1, z]} rotation={[0, 0, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 3]} />
+        <meshStandardMaterial color="#0f172a" />
+      </mesh>
+      <mesh position={[x, 1, z]} rotation={[0, Math.PI / 2, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 3]} />
+        <meshStandardMaterial color="#0f172a" />
+      </mesh>
+
+      {/* Mortandad Tube */}
+      <mesh position={[x, -8.5, z]}>
+        <cylinderGeometry args={[0.2, 0.2, 19, 8]} />
+        <meshStandardMaterial color="#06b6d4" />
+      </mesh>
+      
+      {/* Mortandad Funnel */}
+      <mesh position={[x, -18.5, z]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[1.8, 2, 16]} />
+        <meshStandardMaterial color="#06b6d4" side={THREE.DoubleSide} />
+        <Edges scale={1.0} threshold={15} color="#0891b2" />
+      </mesh>
+    </group>
+  );
+};
+
 const SERVIROVCageModule = ({ markers, activeMarkerId, onMarkerClick }: { markers: FindingMarker[], activeMarkerId: number | null, onMarkerClick: (id: number) => void }) => {
   
-  const { pajareraGeo, mooringLines } = useMemo(() => {
-    // Pajarera Wireframe (Y=0.4 to 3.0)
-    const pGeo = new THREE.BufferGeometry();
-    const pPts = [
-      new THREE.Vector3(-12.5, 0.4, -6.5), new THREE.Vector3(0, 3.0, 0),
-      new THREE.Vector3(12.5, 0.4, -6.5), new THREE.Vector3(0, 3.0, 0),
-      new THREE.Vector3(12.5, 0.4, 6.5), new THREE.Vector3(0, 3.0, 0),
-      new THREE.Vector3(-12.5, 0.4, 6.5), new THREE.Vector3(0, 3.0, 0),
-      new THREE.Vector3(-12.5, 0.4, -6.5), new THREE.Vector3(12.5, 0.4, -6.5),
-      new THREE.Vector3(12.5, 0.4, -6.5), new THREE.Vector3(12.5, 0.4, 6.5),
-      new THREE.Vector3(12.5, 0.4, 6.5), new THREE.Vector3(-12.5, 0.4, 6.5),
-      new THREE.Vector3(-12.5, 0.4, 6.5), new THREE.Vector3(-12.5, 0.4, -6.5),
-    ];
-    pGeo.setFromPoints(pPts);
+  const { cages, mooring, weights, walkways, rails, pajareras } = useMemo(() => {
+    // 1. Walkways & Rails
+    const w = [];
+    const r = [];
+    
+    // Z-directed walkways (X = -11, 0, 11)
+    [-11, 0, 11].forEach(x => {
+      w.push({ pos: [x, 0.2, 0], args: [1, 0.4, 67] });
+      r.push({ pos: [x - 0.4, 0.7, 0], args: [0.05, 0.6, 67] });
+      r.push({ pos: [x + 0.4, 0.7, 0], args: [0.05, 0.6, 67] });
+    });
+    
+    // X-directed walkways
+    [-33, -22, -11, 0, 11, 22, 33].forEach(z => {
+      w.push({ pos: [0, 0.2, z], args: [23, 0.4, 1] });
+      r.push({ pos: [0, 0.7, z - 0.4], args: [23, 0.6, 0.05] });
+      r.push({ pos: [0, 0.7, z + 0.4], args: [23, 0.6, 0.05] });
+    });
 
-    const mLines = [
-      [[-12.5, 0, -6.5], [-30, -50, -30]],
-      [[12.5, 0, -6.5], [30, -50, -30]],
-      [[-12.5, 0, 6.5], [-30, -50, 30]],
-      [[12.5, 0, 6.5], [30, -50, 30]]
-    ];
+    // 2. Cages (2 hileras de 6 jaulas = 12 peceras) y Pajareras (techo red)
+    const c = [];
+    const p = [];
+    [-5.5, 5.5].forEach(x => {
+      [-27.5, -16.5, -5.5, 5.5, 16.5, 27.5].forEach(z => {
+        c.push([x, z]);
 
-    return { pajareraGeo: pGeo, mooringLines: mLines };
+        // Pajarera frame (pirámide superior)
+        const top = new THREE.Vector3(x, 4, z);
+        const corners = [
+          new THREE.Vector3(x - 5, 0, z - 5),
+          new THREE.Vector3(x + 5, 0, z - 5),
+          new THREE.Vector3(x + 5, 0, z + 5),
+          new THREE.Vector3(x - 5, 0, z + 5)
+        ];
+        
+        const pts = [];
+        corners.forEach(corner => {
+          pts.push(corner, top);
+        });
+        for (let j = 0; j < 4; j++) {
+          pts.push(corners[j], corners[(j + 1) % 4]);
+        }
+        p.push(new THREE.BufferGeometry().setFromPoints(pts));
+      });
+    });
+
+    // 6. Mooring (Boyas, Líneas, Muertos expandidos)
+    const mooringPositions = [];
+    [-33, -16.5, 0, 16.5, 33].forEach(z => {
+      mooringPositions.push({
+        start: [-11, 0.5, z], buoy1: [-25, 0, z], buoy2: [-40, 0, z], anchor: [-60, -50, z]
+      });
+      mooringPositions.push({
+        start: [11, 0.5, z], buoy1: [25, 0, z], buoy2: [40, 0, z], anchor: [60, -50, z]
+      });
+    });
+    [-11, 0, 11].forEach(x => {
+      mooringPositions.push({
+        start: [x, 0.5, -33], buoy1: [x, 0, -45], buoy2: [x, 0, -60], anchor: [x, -50, -80]
+      });
+      mooringPositions.push({
+        start: [x, 0.5, 33], buoy1: [x, 0, 45], buoy2: [x, 0, 60], anchor: [x, -50, 80]
+      });
+    });
+    
+    // 5. Weights (Contrapesos) at bottom of lobería (Y = -20)
+    const wt = [];
+    for (let z = -35; z <= 35; z += 2.5) {
+      wt.push([-12.5, -20, z]);
+      wt.push([12.5, -20, z]);
+    }
+    for (let x = -10; x <= 10; x += 2.5) {
+      wt.push([x, -20, -35]);
+      wt.push([x, -20, 35]);
+    }
+
+    return { walkways: w, rails: r, cages: c, pajareras: p, mooring: mooringPositions, weights: wt };
   }, []);
 
   return (
     <group>
-      {/* --- 1. ESTRUCTURAS EN SUPERFICIE (Y > 0) --- */}
-      
-      {/* Pasarelas Perimetrales (Y = +0.2) */}
-      <mesh position={[0, 0.2, -6.5]}>
-        <boxGeometry args={[26, 0.4, 1]} />
-        <meshStandardMaterial color="#475569" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 0.2, 6.5]}>
-        <boxGeometry args={[26, 0.4, 1]} />
-        <meshStandardMaterial color="#475569" roughness={0.7} />
-      </mesh>
-      <mesh position={[-12.5, 0.2, 0]}>
-        <boxGeometry args={[1, 0.4, 14]} />
-        <meshStandardMaterial color="#475569" roughness={0.7} />
-      </mesh>
-      <mesh position={[12.5, 0.2, 0]}>
-        <boxGeometry args={[1, 0.4, 14]} />
-        <meshStandardMaterial color="#475569" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 0.2, 0]}>
-        <boxGeometry args={[1, 0.4, 12]} />
-        <meshStandardMaterial color="#475569" roughness={0.7} />
-      </mesh>
-
-      {/* Boyas de flotación Perimetrales */}
-      {[-12.5, 0, 12.5].map((xPos) => (
-        [-6.5, 6.5].map((zPos) => (
-          <mesh key={`buoy-${xPos}-${zPos}`} position={[xPos, 0.5, zPos]}>
-            <cylinderGeometry args={[0.6, 0.3, 0.8, 16]} />
-            <meshStandardMaterial color="#f97316" roughness={0.4} />
+      {/* --- 1. PASARELAS Y ESTRUCTURA SUPERIOR --- */}
+      <group>
+        {walkways.map((wk, i) => (
+          <mesh key={`wk-${i}`} position={wk.pos as [number, number, number]}>
+            <boxGeometry args={wk.args as [number, number, number]} />
+            <meshStandardMaterial color="#111827" roughness={0.8} />
           </mesh>
-        ))
-      ))}
-      {[-6, 6].map((xPos) => (
-        [-6.5, 6.5].map((zPos) => (
-          <mesh key={`buoy-mid-${xPos}-${zPos}`} position={[xPos, 0.5, zPos]}>
-            <cylinderGeometry args={[0.6, 0.3, 0.8, 16]} />
-            <meshStandardMaterial color="#f97316" roughness={0.4} />
+        ))}
+        {rails.map((rl, i) => (
+          <mesh key={`rl-${i}`} position={rl.pos as [number, number, number]}>
+            <boxGeometry args={rl.args as [number, number, number]} />
+            <meshStandardMaterial color="#1f2937" roughness={0.5} />
           </mesh>
-        ))
-      ))}
-
-      {/* Red Pajarera (Techo Y = 0.4 a 3.0) */}
-      <lineSegments position={[0, 0, 0]} geometry={pajareraGeo}>
-        <lineBasicMaterial color="#ffffff" transparent opacity={0.3} />
-      </lineSegments>
-
-      {/* --- 2. ESTRUCTURAS SUBMARINAS (Y < 0) --- */}
-      
-      {/* REDES PECERAS INTERIORES (Y = -10, size = 10x20x10) */}
-      <group position={[-5.5, -10, 0]}>
-        <mesh>
-          <boxGeometry args={[10, 20, 10]} />
-          <meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.6} />
-        </mesh>
-      </group>
-      <group position={[5.5, -10, 0]}>
-        <mesh>
-          <boxGeometry args={[10, 20, 10]} />
-          <meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.6} />
-        </mesh>
+        ))}
       </group>
 
-      {/* RED LOBERÍA ENVOLVENTE (Y = -20, size = 25x40x13) */}
-      {/* REQUISITO CRÍTICO: VISIBLE Y LUMINOSA, wireframe cyan brillante */}
-      <group position={[0, -20, 0]}>
-        <mesh>
-          <boxGeometry args={[25, 40, 13]} />
-          <meshBasicMaterial 
-            color="#22d3ee" 
-            wireframe
-            transparent 
-            opacity={0.35} 
-            side={THREE.DoubleSide} 
-          />
-        </mesh>
+      {/* --- ESTRUCTURA PAJARERAS --- */}
+      <group>
+        {pajareras.map((geo, i) => (
+          <lineSegments key={`paj-${i}`} geometry={geo}>
+            <lineBasicMaterial color="#000000" linewidth={2} />
+          </lineSegments>
+        ))}
       </group>
 
-      {/* SISTEMA DE FONDEO (Líneas y Muertos a Y = -50) */}
-      {mooringLines.map((linePts, idx) => {
-        const points = linePts.map(p => new THREE.Vector3(p[0], p[1], p[2]));
-        const geo = new THREE.BufferGeometry().setFromPoints(points);
-        return (
-          <React.Fragment key={`mooring-${idx}`}>
-            <line geometry={geo}>
-              <lineBasicMaterial color="#ef4444" linewidth={2} />
-            </line>
-            <mesh position={linePts[1] as [number, number, number]}>
-              <boxGeometry args={[4, 4, 4]} />
-              <meshStandardMaterial color="#334155" roughness={0.9} />
-            </mesh>
-          </React.Fragment>
-        );
-      })}
+      {/* --- 2. TUBERÍAS Y COLECTORES & 3. PECERAS INTERIORES --- */}
+      <group>
+        {cages.map(([x, z], i) => (
+          <Cage key={`cage-${i}`} x={x} z={z} />
+        ))}
+      </group>
 
-      {/* --- 3. MARCADORES / HALLAZGOS --- */}
+      {/* --- 4. RED LOBERÍA ENVOLVENTE --- */}
+      <mesh position={[0, -10, 0]}>
+        <boxGeometry args={[25, 20, 70]} />
+        <meshPhysicalMaterial 
+          color="#0d9488" 
+          transmission={0.8}
+          opacity={0.4} 
+          transparent 
+          side={THREE.DoubleSide}
+          roughness={0.5}
+        />
+        <Edges scale={1.0} threshold={15} color="#0f766e" />
+      </mesh>
+
+      {/* --- 5. CONTRAPESOS PERIMETRALES INFERIORES --- */}
+      <group>
+        {weights.map((pos, i) => (
+          <mesh key={`wt-${i}`} position={pos as [number, number, number]}>
+            <boxGeometry args={[0.8, 1.2, 0.8]} />
+            <meshStandardMaterial color={i % 2 === 0 ? "#ef4444" : "#f8fafc"} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* --- 6. SISTEMA DE FONDEO Y ANCLAJES (Polos Verticales) --- */}
+      <group>
+        {mooring.map((m, i) => {
+          return (
+            <React.Fragment key={`moor-${i}`}>
+              {/* Lines linking the buoys */}
+              <line geometry={new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(...m.start),
+                new THREE.Vector3(m.buoy1[0], 4, m.buoy1[2])
+              ])}>
+                <lineBasicMaterial color="#000000" />
+              </line>
+              <line geometry={new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(m.buoy1[0], 4, m.buoy1[2]),
+                new THREE.Vector3(m.buoy2[0], 4, m.buoy2[2])
+              ])}>
+                <lineBasicMaterial color="#000000" />
+              </line>
+              <line geometry={new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(m.buoy2[0], 4, m.buoy2[2]),
+                new THREE.Vector3(...m.anchor)
+              ])}>
+                <lineBasicMaterial color="#000000" />
+              </line>
+              
+              {/* Pole 1 */}
+              <mesh position={[m.buoy1[0], 2, m.buoy1[2]]}>
+                <cylinderGeometry args={[0.15, 0.15, 4]} />
+                <meshStandardMaterial color="#111827" />
+              </mesh>
+              <mesh position={[m.buoy1[0], 0, m.buoy1[2]]}>
+                <sphereGeometry args={[0.6]} />
+                <meshStandardMaterial color="#f8fafc" />
+              </mesh>
+              <mesh position={[m.buoy1[0], 4.5, m.buoy1[2]]}>
+                <coneGeometry args={[0.8, 1.2, 16]} />
+                <meshStandardMaterial color="#f97316" />
+                <Edges color="#ea580c" />
+              </mesh>
+              
+              {/* Pole 2 */}
+              <mesh position={[m.buoy2[0], 2, m.buoy2[2]]}>
+                <cylinderGeometry args={[0.15, 0.15, 4]} />
+                <meshStandardMaterial color="#111827" />
+              </mesh>
+              <mesh position={[m.buoy2[0], 0, m.buoy2[2]]}>
+                <sphereGeometry args={[0.6]} />
+                <meshStandardMaterial color="#f8fafc" />
+              </mesh>
+              <mesh position={[m.buoy2[0], 4.5, m.buoy2[2]]}>
+                <coneGeometry args={[0.8, 1.2, 16]} />
+                <meshStandardMaterial color="#f97316" />
+                <Edges color="#ea580c" />
+              </mesh>
+
+              {/* Anchor */}
+              <mesh position={m.anchor as [number, number, number]}>
+                <boxGeometry args={[4, 4, 4]} />
+                <meshStandardMaterial color="#cbd5e1" roughness={0.9} />
+                <Edges color="#94a3b8" />
+              </mesh>
+            </React.Fragment>
+          );
+        })}
+      </group>
+
+      {/* --- 7. PINES INTERACTIVOS (<Html>) --- */}
       {markers.map((marker) => (
         <group key={marker.id} position={marker.position}>
           <MarkerLabel 
@@ -252,11 +380,11 @@ export const Infrastructure3DViewer: React.FC<{
   return (
     <div className="relative w-full h-full bg-slate-900 rounded-xl overflow-hidden shadow-inner border border-slate-800">
       <Canvas
-        camera={{ position: [30, 20, 40], fov: 45 }}
+        camera={{ position: [80, 50, 100], fov: 45 }}
         gl={{ antialias: true, alpha: false }}
         className="cursor-move"
       >
-        <color attach="background" args={['#050b18']} />
+        <color attach="background" args={['#0f172a']} />
         
         <ambientLight intensity={1.5} color="#ffffff" />
         <directionalLight position={[50, 100, 40]} intensity={1.5} color="#ffffff" />
@@ -266,7 +394,7 @@ export const Infrastructure3DViewer: React.FC<{
           dampingFactor={0.05}
           maxPolarAngle={Math.PI / 2 + 0.1} 
           minDistance={10}
-          maxDistance={200}
+          maxDistance={300}
         />
 
         <WaterPlane />
@@ -276,11 +404,11 @@ export const Infrastructure3DViewer: React.FC<{
           onMarkerClick={handleMarkerClick}
         />
         
-        <gridHelper args={[400, 40, '#0e2b5c', '#0b1c3c']} position={[0, -50, 0]} />
+        <gridHelper args={[600, 60, '#1e293b', '#0f172a']} position={[0, -50, 0]} />
       </Canvas>
 
       {/* Overlay UI */}
-      <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-slate-700/50 shadow-xl pointer-events-none w-72">
+      <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-slate-700/50 shadow-xl pointer-events-none w-72 z-10">
         <h3 className="text-white font-bold mb-1 flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-cyan-400" />
           Telemetría 3D SERVIROV
@@ -313,7 +441,7 @@ export const Infrastructure3DViewer: React.FC<{
       </div>
 
       {activeMarker && (
-        <div className="absolute bottom-4 left-4 right-4 bg-slate-900/95 backdrop-blur-md p-4 rounded-xl border border-cyan-900/50 shadow-2xl animate-fade-in flex items-start gap-4">
+        <div className="absolute bottom-4 left-4 right-4 bg-slate-900/95 backdrop-blur-md p-4 rounded-xl border border-cyan-900/50 shadow-2xl animate-fade-in flex items-start gap-4 z-10">
           <div className={`mt-1 shrink-0 ${activeMarker.status === 'optimal' ? 'text-emerald-500' : activeMarker.status === 'warning' ? 'text-amber-500' : 'text-red-500'}`}>
             {activeMarker.status === 'optimal' ? <CheckCircle2 className="w-8 h-8" /> : <AlertTriangle className="w-8 h-8" />}
           </div>

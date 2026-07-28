@@ -85,25 +85,7 @@ export const Header: React.FC = () => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
-              <Radio className="w-3 h-3 text-slate-400" /> Telemetría Online
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
-              <Activity className="w-3 h-3 text-slate-400" /> CCTV Activo
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-            </span>
-            <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
-              <BrainCircuit className="w-3 h-3 text-slate-400" /> AI Activa
+              <Activity className="w-3 h-3 text-slate-400" /> Sistema en Línea
             </span>
           </div>
         </div>
