@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { LoginView } from './views/LoginView';
 import { Header } from './components/shared/Header';
 import { Sidebar } from './components/shared/Sidebar';
+import { BottomNavBar } from './components/shared/BottomNavBar';
 import { DashboardView } from './views/DashboardView';
 import { InstallationsView } from './views/InstallationsView';
 import { FindingsView } from './views/FindingsView';
@@ -41,12 +42,13 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans transition-all duration-300 relative">
       <Header />
-      <div className="flex flex-1 flex-col sm:flex-row">
+      <div className="flex flex-1 flex-col sm:flex-row pb-16 sm:pb-0">
         <Sidebar />
         <main className="flex-1 flex flex-col min-w-0">
           {renderView()}
         </main>
       </div>
+      <BottomNavBar />
       <AIChatbotWidget />
       <PhoneAlertModal />
       <EmailPreviewModal />

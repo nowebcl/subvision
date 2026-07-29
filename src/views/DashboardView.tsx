@@ -1378,8 +1378,86 @@ export const DashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* ROV Reports Table */}
-            <div className="overflow-x-auto">
+            {/* ROV Reports Mobile Cards View */}
+            <div className="block md:hidden space-y-4">
+              {currentReports.length === 0 ? (
+                <div className="py-10 text-center text-slate-400 font-mono">
+                  No se encontraron informes coincidentes.
+                </div>
+              ) : (
+                currentReports.map(report => (
+                  <div key={report.id} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col gap-3 relative">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-2.5">
+                        <span className="relative flex h-2.5 w-2.5 mt-1 shrink-0">
+                          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                            report.puerto === 'Abierto' ? 'bg-emerald-500' : 'bg-red-500'
+                          }`} />
+                        </span>
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-sm leading-tight">{report.nombre}</h4>
+                          <span className="text-[10px] font-mono text-slate-400 mt-0.5 block">{report.fecha}</span>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-md text-[8px] font-bold tracking-wider uppercase border ${
+                        report.puerto === 'Abierto'
+                          ? 'bg-emerald-100/50 text-emerald-700 border-emerald-200/50'
+                          : 'bg-red-100/50 text-red-700 border-red-200/50'
+                      }`}>
+                        {report.puerto}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-[10px] bg-slate-50 p-2.5 rounded-xl border border-slate-100/50">
+                      <div>
+                        <span className="text-slate-400 block uppercase font-bold text-[8px]">Piloto</span>
+                        <span className="font-semibold text-slate-700">{report.piloto}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block uppercase font-bold text-[8px]">Jefe Centro</span>
+                        <span className="font-semibold text-slate-700">{report.jefeCentro}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-slate-400 block uppercase font-bold text-[8px]">Redes Analizadas</span>
+                        <span className="font-medium text-slate-600 truncate block">{report.redes}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <a
+                        href={`/visor.html?center=${selectedCenter.id}&report=${report.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-bold rounded-xl border border-cyan-200/50 transition-all flex items-center justify-center gap-1.5 text-xs"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>Visor 3D</span>
+                      </a>
+                      
+                      <button
+                        onClick={() => handleExportSinglePdf(report)}
+                        className="p-2 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700 border border-slate-200 transition-all"
+                      >
+                        <FileDown className="w-4 h-4" />
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          setEmailPromptReport(report);
+                          setIsEmailPromptOpen(true);
+                        }}
+                        className="p-2 rounded-xl bg-cyan-500 text-slate-950 hover:bg-cyan-400 border border-transparent transition-all shadow-sm"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* ROV Reports Table Desktop */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider font-semibold bg-slate-50/50">
@@ -1568,7 +1646,7 @@ export const DashboardView: React.FC = () => {
                       </div>
 
                       {/* Technical Specs */}
-                      <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100/80 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100/80 mb-4">
                         <div>
                           <span className="text-slate-400 block text-[10px] uppercase">Temp. Agua</span>
                           <span className="font-bold text-slate-700">{c.waterParams.temperature} °C</span>
@@ -1861,7 +1939,7 @@ export const DashboardView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Empresa */}
                 <div className="space-y-1">
                   <label className="text-slate-500 font-semibold block uppercase text-[9px]">Empresa</label>
@@ -2128,7 +2206,7 @@ export const DashboardView: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-slate-500 font-semibold block uppercase text-[9px]">Modelo de Lenguaje</label>
                     <select
@@ -2170,7 +2248,7 @@ export const DashboardView: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-slate-500 font-semibold block uppercase text-[9px]">Estado de WhatsApp API</label>
                     <select
@@ -2263,7 +2341,7 @@ export const DashboardView: React.FC = () => {
                   {/* Operator Info card */}
                   <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-4">
                     <h4 className="font-bold text-slate-800">Información Operativa</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <span className="text-[10px] font-bold text-slate-400 block uppercase">Cargo</span>
                         <span className="font-semibold text-slate-700 block mt-0.5">{op.role === 'admin' ? 'Administrador' : op.role}</span>

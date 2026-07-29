@@ -28,14 +28,6 @@ export const Header: React.FC = () => {
       {/* Branding Section */}
       <div className="flex items-center gap-2.5">
         
-        {/* Mobile Hamburger Button */}
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="sm:hidden p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
-          title="Menú Navegación"
-        >
-          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
 
         {/* Branding Logo Image */}
         <div className="relative w-10 h-10 shrink-0 select-none">
@@ -43,7 +35,7 @@ export const Header: React.FC = () => {
           <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border-2 border-white animate-pulse" />
         </div>
         
-        <div>
+        <div className="hidden sm:block">
           <div className="flex items-center gap-1.5">
             <span className="text-slate-900 font-extrabold tracking-wide text-sm sm:text-lg">SUBVISION</span>
             <span className="text-[9px] font-mono font-bold bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded-full hidden sm:inline">OS v1.4</span>
@@ -55,17 +47,17 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Control Center & Select Dropdown */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 sm:gap-6">
         
         {/* Aquaculture Center Dropdown Selector */}
-        <div className="relative flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5 hover:bg-slate-100/50 transition-colors">
-          <Building2 className="w-4 h-4 text-cyan-600" />
+        <div className="relative flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-2 sm:px-3 py-1.5 hover:bg-slate-100/50 transition-colors">
+          <Building2 className="w-4 h-4 text-cyan-600 hidden sm:block" />
           <div className="text-left">
-            <div className="text-[9px] text-slate-400 font-medium leading-none uppercase">Centro Operativo</div>
+            <div className="text-[9px] text-slate-400 font-medium leading-none uppercase hidden sm:block">Centro Operativo</div>
             <select
               value={selectedCenter.id}
               onChange={(e) => setSelectedCenterById(e.target.value)}
-              className="bg-transparent border-none text-slate-800 text-xs font-semibold focus:outline-none pr-6 cursor-pointer appearance-none"
+              className="bg-transparent border-none text-slate-800 text-xs font-semibold focus:outline-none pr-6 cursor-pointer appearance-none max-w-[140px] sm:max-w-none text-ellipsis overflow-hidden whitespace-nowrap"
             >
               {centers.map(center => (
                 <option key={center.id} value={center.id}>
@@ -93,14 +85,14 @@ export const Header: React.FC = () => {
 
       {/* Profile Detail */}
       {currentUser && (
-        <div className="flex items-center gap-3 border-l border-slate-100 pl-6">
+        <div className="flex items-center gap-2 sm:gap-3 border-l border-slate-100 pl-2 sm:pl-6">
           <div className="text-right hidden sm:block">
             <div className="text-xs font-bold text-slate-800">{currentUser.name}</div>
             <div className="text-[10px] text-slate-400 font-medium">{currentUser.role}</div>
           </div>
           
           {/* Avatar Icon */}
-          <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-200 flex items-center justify-center text-white text-xs font-bold shadow-inner">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900 border border-slate-200 flex items-center justify-center text-white text-xs font-bold shadow-inner shrink-0">
             {currentUser.avatar}
           </div>
 
@@ -108,7 +100,7 @@ export const Header: React.FC = () => {
           <button
             onClick={() => logout()}
             title="Cerrar Sesión"
-            className="p-2 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all cursor-pointer flex items-center justify-center border border-transparent hover:border-red-100 shadow-sm hover:shadow"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all cursor-pointer flex items-center justify-center border border-transparent hover:border-red-100 shadow-sm hover:shadow"
           >
             <LogOut className="w-4 h-4" />
           </button>

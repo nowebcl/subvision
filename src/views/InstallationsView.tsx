@@ -41,7 +41,7 @@ export const InstallationsView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 p-6 space-y-6 bg-slate-50 overflow-y-auto animate-fade-in">
+    <div className="flex-1 p-4 sm:p-6 space-y-6 bg-slate-50 overflow-y-auto animate-fade-in">
       
       {/* View Header */}
       <div>
@@ -195,7 +195,7 @@ export const InstallationsView: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100/50">
                     <span className="text-slate-400 text-[10px] font-semibold block uppercase">Especie</span>
                     <span className="text-xs font-bold text-slate-700">{selectedCage.species}</span>

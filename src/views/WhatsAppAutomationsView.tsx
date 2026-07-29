@@ -145,7 +145,7 @@ export const WhatsAppAutomationsView: React.FC = () => {
     <div className="flex-1 flex bg-slate-50 min-h-[calc(100vh-73px)] animate-fade-in text-xs">
       
       {/* Rule Builder Panel (Left) */}
-      <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-73px)]">
+      <div className="flex-1 p-4 sm:p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-73px)]">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             <Share2 className="w-6 h-6 text-cyan-600 animate-pulse" />

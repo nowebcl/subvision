@@ -47,20 +47,8 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* Mobile Drawer Overlay Backdrop */}
-      {isMobileMenuOpen && (
-        <div 
-          onClick={() => setIsMobileMenuOpen(false)}
-          className="sm:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 transition-all duration-300"
-        />
-      )}
-      
-      {/* Sidebar Drawer Container */}
-      <aside className={`
-        fixed sm:relative top-[73px] sm:top-0 bottom-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col shrink-0 shadow-[2px_0_10px_rgba(241,245,249,0.4)] z-40 transition-transform duration-300
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}
-        min-h-[calc(100vh-73px)]
-      `}>
+      {/* Sidebar Container (Desktop Only) */}
+      <aside className="hidden sm:flex relative top-0 bottom-0 left-0 w-64 bg-white border-r border-slate-100 flex-col shrink-0 shadow-[2px_0_10px_rgba(241,245,249,0.4)] z-40 min-h-[calc(100vh-73px)]">
         {/* Navigation Links */}
         <nav className="flex-1 px-4 py-6 space-y-1.5">
           {menuItems.map((item) => {
