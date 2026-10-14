@@ -843,37 +843,37 @@
       
       // Neon colors for telemetry ring
       let neonColor = '#10b981'; // Vibrant emerald
-      let haloColor = 'rgba(16, 185, 129, 0.28)';
+      let haloColor = 'rgba(16, 185, 129, 0.35)';
       if (colorType === 'red') {
         neonColor = '#ef4444'; // Vibrant red
-        haloColor = 'rgba(239, 68, 68, 0.28)';
+        haloColor = 'rgba(239, 68, 68, 0.35)';
       } else if (colorType === 'yellow') {
         neonColor = '#f59e0b'; // Vibrant amber
-        haloColor = 'rgba(245, 158, 11, 0.28)';
+        haloColor = 'rgba(245, 158, 11, 0.35)';
       }
       
-      // Soft radial glow aura
-      const halo = ctx.createRadialGradient(cx, cy, 120, cx, cy, 250);
+      // Tight radial glow aura right around the net knot
+      const halo = ctx.createRadialGradient(cx, cy, 90, cx, cy, 210);
       halo.addColorStop(0, haloColor);
       halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = halo;
       ctx.beginPath();
-      ctx.arc(cx, cy, 250, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 210, 0, Math.PI * 2);
       ctx.fill();
       
-      // Outer dashed radar circle
+      // Outer dashed target reticle
       ctx.save();
       ctx.strokeStyle = neonColor;
       ctx.lineWidth = 6;
-      ctx.setLineDash([24, 18]);
+      ctx.setLineDash([20, 16]);
       ctx.shadowColor = neonColor;
-      ctx.shadowBlur = 16;
+      ctx.shadowBlur = 14;
       ctx.beginPath();
-      ctx.arc(cx, cy, 215, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 182, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
       
-      // Corner radar ticks (4 compass cardinals)
+      // Corner target brackets (4 compass cardinal ticks)
       ctx.save();
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 5;
@@ -882,7 +882,7 @@
       for (let i = 0; i < 4; i++) {
         const angle = (i * Math.PI) / 2;
         ctx.beginPath();
-        ctx.arc(cx, cy, 230, angle - 0.16, angle + 0.16);
+        ctx.arc(cx, cy, 196, angle - 0.20, angle + 0.20);
         ctx.stroke();
       }
       ctx.restore();
@@ -902,39 +902,66 @@
       
       const cx = 256;
       const cy = 256;
-      const badgeR = 162;
+      const badgeR = 142;
       
-      // Vibrant, high-contrast, non-murky color ramps
+      // Vibrant, high-contrast color ramps
       let lightColor = '#34d399';
       let midColor = '#10b981';
       let darkColor = '#047857';
-      let glowColor = 'rgba(16, 185, 129, 0.85)';
+      let glowColor = 'rgba(16, 185, 129, 0.9)';
       
       if (colorType === 'red') {
         lightColor = '#ff4d6d';
         midColor = '#ef4444';
         darkColor = '#b91c1c';
-        glowColor = 'rgba(239, 68, 68, 0.85)';
+        glowColor = 'rgba(239, 68, 68, 0.9)';
       } else if (colorType === 'yellow') {
         lightColor = '#fde047';
         midColor = '#f59e0b';
         darkColor = '#b45309';
-        glowColor = 'rgba(245, 158, 11, 0.85)';
+        glowColor = 'rgba(245, 158, 11, 0.9)';
       }
       
-      // 1. Outer dark drop shadow (separates pin cleanly from ocean and cage mesh)
+      // 1. Crosshair line clamps that visually latch onto the vertical and horizontal net ropes
+      ctx.save();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 14;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+      ctx.shadowBlur = 12;
+      // Vertical relinga clamps (Top & Bottom)
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - badgeR + 2);
+      ctx.lineTo(cx, cy - badgeR - 36);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + badgeR - 2);
+      ctx.lineTo(cx, cy + badgeR + 36);
+      ctx.stroke();
+      // Horizontal mesh cord clamps (Left & Right)
+      ctx.beginPath();
+      ctx.moveTo(cx - badgeR + 2, cy);
+      ctx.lineTo(cx - badgeR - 36, cy);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx + badgeR - 2, cy);
+      ctx.lineTo(cx + badgeR + 36, cy);
+      ctx.stroke();
+      ctx.restore();
+      
+      // 2. Outer dark drop shadow
       ctx.save();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-      ctx.shadowBlur = 28;
-      ctx.shadowOffsetY = 8;
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 6;
       ctx.beginPath();
       ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
       ctx.fillStyle = '#050b18';
       ctx.fill();
       ctx.restore();
       
-      // 2. Solid rich radial gradient fill
-      const grad = ctx.createRadialGradient(cx - 45, cy - 45, 20, cx, cy, badgeR);
+      // 3. Solid rich radial gradient fill
+      const grad = ctx.createRadialGradient(cx - 38, cy - 38, 16, cx, cy, badgeR);
       grad.addColorStop(0, lightColor);
       grad.addColorStop(0.55, midColor);
       grad.addColorStop(1, darkColor);
@@ -944,48 +971,48 @@
       ctx.fillStyle = grad;
       ctx.fill();
       
-      // 3. Thick solid pure-white border with neon glow
+      // 4. Thick solid pure-white border with neon glow
       ctx.save();
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 16;
+      ctx.lineWidth = 18;
       ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 22;
+      ctx.shadowBlur = 20;
       ctx.beginPath();
       ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
       
-      // 4. Inner glossy highlight arc
+      // 5. Inner glossy highlight arc
       ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-      ctx.lineWidth = 6;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.lineWidth = 5;
       ctx.beginPath();
-      ctx.arc(cx, cy, badgeR - 12, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.arc(cx, cy, badgeR - 10, Math.PI * 1.15, Math.PI * 1.85);
       ctx.stroke();
       ctx.restore();
       
-      // 5. Giant bold white number with dark contrast outline & shadow
+      // 6. Bold white number with dark contrast outline & shadow
       const numStr = String(number);
-      let fontSize = 200;
-      if (numStr.length === 2) fontSize = 165;
-      else if (numStr.length >= 3) fontSize = 130;
+      let fontSize = 185;
+      if (numStr.length === 2) fontSize = 150;
+      else if (numStr.length >= 3) fontSize = 120;
       
       ctx.save();
       ctx.font = `900 ${fontSize}px Outfit, 'JetBrains Mono', -apple-system, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
-      // Heavy dark stroke for extreme contrast against any background
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+      // Dark outline stroke for extreme contrast against lines and ocean
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.92)';
       ctx.lineWidth = 14;
       ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-      ctx.shadowBlur = 18;
-      ctx.shadowOffsetY = 4;
-      ctx.strokeText(numStr, cx, cy + 8);
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 3;
+      ctx.strokeText(numStr, cx, cy + 6);
       
       // Pure white text
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(numStr, cx, cy + 8);
+      ctx.fillText(numStr, cx, cy + 6);
       ctx.restore();
       
       const texture = new THREE.CanvasTexture(canvas);
@@ -1030,21 +1057,17 @@
 
       // 1. Obtener profundidad real reportada (en metros submarinos)
       let depthMeters = null;
-
       if (finding && finding.profundidad) {
         const m = String(finding.profundidad).match(/(\d+(\.\d+)?)/);
         if (m) {
           const val = parseFloat(m[1]);
-          // En acuicultura las profundidades de inspección van de 4m a 28m
-          // (valores menores a 3m corresponden a dimensiones de corte/desgarro)
           if (val >= 3.0) depthMeters = val;
         }
       }
 
       const textDesc = ((finding ? (finding.observacion + ' ' + (finding.clasificacion || '')) : '') + ' ' + (report.nombre || '') + ' ' + (report.redes || '')).toLowerCase();
-      const seccion = finding ? (finding.seccion || '').toLowerCase() : '';
+      const seccion = (finding && finding.seccion ? finding.seccion : '').toLowerCase();
 
-      // Si no viene en finding.profundidad, buscar en el texto frases de profundidad real
       if (!depthMeters) {
         const matchDepth = textDesc.match(/(?:profundidad|cota|a|calado)\s*(?:de)?\s*(\d+(\.\d+)?)\s*(?:m|metros)/i);
         if (matchDepth) {
@@ -1053,86 +1076,69 @@
         }
       }
 
-      const clasificacion = finding ? (finding.clasificacion || '').toLowerCase() : '';
-
-      // Si aún no hay profundidad, deducir según la sección de la malla en acuicultura:
+      const isFondo = seccion.includes('fondo') || textDesc.includes('fondo');
       if (!depthMeters) {
-        if (seccion.includes('fondo') || textDesc.includes('fondo')) {
-          depthMeters = 20.0;
-        } else if (textDesc.includes('lobera')) {
-          depthMeters = 22.0 + ((globalIdx * 2) % 6);
-        } else if (textDesc.includes('fondeo') || textDesc.includes('anclaje')) {
-          depthMeters = 24.0;
-        } else if (seccion.includes('flotador')) {
-          depthMeters = 6.0;
-        } else {
-          // Paredes verticales de la red: repartidas entre 8m y 16m
-          const realisticDepths = [8.0, 12.0, 15.0, 18.0];
-          depthMeters = realisticDepths[globalIdx % realisticDepths.length];
-        }
+        depthMeters = isFondo ? 20.0 : [6.0, 10.0, 14.0, 18.0][globalIdx % 4];
       }
 
-      // A) SISTEMA DE FONDEO Y ANCLAJE (Líneas diagonales exteriores hacia los muertos de hormigón)
-      const isFondeo = textDesc.includes('fondeo') || textDesc.includes('anclaje') || clasificacion.includes('fondeo');
-      if (isFondeo) {
-        const posY = 8.0 - depthMeters; // Ej: cota 24m -> Y = -16.0
-        const sideZ = cz >= 0 ? 1 : -1;
-        const posX = cx;
-        const posZ = cz + (hd + 16.0) * sideZ;
-        return new THREE.Vector3(posX, Math.max(-45.0, Math.min(-12.0, posY)), posZ);
-      }
-
-      // B) RED LOBERA (Malla exterior envolvente anti-depredadores a 22m - 28m)
-      const isLobera = textDesc.includes('lobera') || seccion.includes('lobera') || clasificacion.includes('lobera');
-      if (isLobera) {
-        const posY = 8.0 - depthMeters;
-        const sideZ = cz >= 0 ? 1 : -1;
-        return new THREE.Vector3(cx, Math.max(-24.0, Math.min(-12.0, posY)), cz + (hd + 4.5) * sideZ);
-      }
-
-      // C) FONDO DE JAULA PECERA (Cota 20 metros, base de la red pecera en Y = -12.0)
-      const isFondo = (seccion.includes('fondo') || textDesc.includes('fondo')) && depthMeters >= 18.0;
+      // 2. FONDO DE MALLA (Paño de fondo de la pecera a 20m de profundidad, Y = -12.0)
       if (isFondo) {
-        const posY = -12.0; // Fondo exacto de la red pecera
-        const relingaOffsets = [-5.5, 0.0, 5.5];
-        const rx = relingaOffsets[globalIdx % 3];
-        const rz = (textDesc.includes('sur')) ? (hd - 1.5) : (textDesc.includes('norte') ? -(hd - 1.5) : 0);
-        return new THREE.Vector3(cx + rx, posY, cz + rz);
+        // Cuadrícula exacta de relingas en el paño de fondo
+        const bottomRelingas = [
+          [0.0, 5.5],    // Relinga central-sur
+          [-5.5, 0.0],   // Relinga central-oeste
+          [5.5, 0.0],    // Relinga central-este
+          [0.0, -5.5],   // Relinga central-norte
+          [0.0, 0.0],    // Centro del paño de fondo
+          [-5.5, 5.5],   // Intersección sur-oeste
+          [5.5, 5.5],    // Intersección sur-este
+          [-5.5, -5.5],  // Intersección norte-oeste
+          [5.5, -5.5]    // Intersección norte-este
+        ];
+        let [rx, rz] = bottomRelingas[globalIdx % bottomRelingas.length];
+        if (textDesc.includes('sur')) rz = 5.5;
+        else if (textDesc.includes('norte')) rz = -5.5;
+        if (textDesc.includes('este')) rx = 5.5;
+        else if (textDesc.includes('oeste')) rx = -5.5;
+
+        // Situado exactamente sobre la línea del paño de fondo
+        return new THREE.Vector3(cx + rx, -12.02, cz + rz);
       }
 
-      // D) PAREDES LATERALES DE LA RED PECERA (Paños de red sumergidos de 6m a 18m)
+      // 3. PAREDES LATERALES DE LA MALLA (Paños verticales de la red pecera)
+      // Cotas de profundidad: Y = 8.0 (0m superficie) hasta Y = -12.0 (20m fondo)
       let posY = 8.0 - depthMeters;
-      posY = Math.max(-11.5, Math.min(2.0, posY));
+      posY = Math.max(-11.5, Math.min(7.0, posY));
 
       let face = '';
       if (textDesc.includes('sur') || textDesc.includes('south')) face = 'sur';
       else if (textDesc.includes('norte') || textDesc.includes('north')) face = 'norte';
-      else if (textDesc.includes('este') || textDesc.includes('oriente') || textDesc.includes('east')) face = 'este';
-      else if (textDesc.includes('oeste') || textDesc.includes('poniente') || textDesc.includes('west')) face = 'oeste';
+      else if (textDesc.includes('este') || textDesc.includes('east') || textDesc.includes('oriente')) face = 'este';
+      else if (textDesc.includes('oeste') || textDesc.includes('west') || textDesc.includes('poniente')) face = 'oeste';
       else {
         const faces = ['sur', 'este', 'norte', 'oeste'];
         face = faces[globalIdx % 4];
       }
 
-      // Alinear sobre las relingas verticales de refuerzo de la red (-5.5m, 0m, +5.5m)
-      const relingaOffsets = [-5.5, 0.0, 5.5];
-      const relingaOffset = relingaOffsets[(globalIdx * 2 + Math.floor(depthMeters)) % 3];
+      // Alineación estricta sobre las relingas verticales de refuerzo de la red (-5.5m, 0m, +5.5m)
+      const relingas = [-5.5, 0.0, 5.5];
+      const relingaOffset = relingas[(globalIdx * 2 + Math.floor(depthMeters)) % 3];
 
       let posX = cx;
       let posZ = cz;
-      const normalOffset = 0.85; // Separación nítida sobre la cara exterior para visibilidad óptima
+      const surfaceEpsilon = 0.04; // Apenas 4cm sobre la cara exterior para posarse exactamente sobre la cuerda
 
       if (face === 'sur') {
         posX = cx + relingaOffset;
-        posZ = cz + hd + normalOffset;
+        posZ = cz + hd + surfaceEpsilon;
       } else if (face === 'norte') {
         posX = cx + relingaOffset;
-        posZ = cz - hd - normalOffset;
+        posZ = cz - hd - surfaceEpsilon;
       } else if (face === 'este') {
-        posX = cx + hw + normalOffset;
+        posX = cx + hw + surfaceEpsilon;
         posZ = cz + relingaOffset;
       } else if (face === 'oeste') {
-        posX = cx - hw - normalOffset;
+        posX = cx - hw - surfaceEpsilon;
         posZ = cz + relingaOffset;
       }
 
@@ -1242,30 +1248,30 @@
           const fgTexture = createMarkerFgTexture(markerNumber, markerColor);
           const bgTexture = createMarkerBgTexture(markerColor);
 
-          // Materials: depthTest: false & depthWrite: false ensures crystal clear rendering without net clipping
+          // Materials: depthTest: true so the pin lives in true 3D space on the net wall
           const fgMaterial = new THREE.SpriteMaterial({ 
             map: fgTexture, 
             transparent: true,
             depthWrite: false,
-            depthTest: false
+            depthTest: true
           });
           const bgMaterial = new THREE.SpriteMaterial({ 
             map: bgTexture, 
             transparent: true,
             depthWrite: false,
-            depthTest: false
+            depthTest: true
           });
 
-          // Sprites with generous scale for high visibility from subsea viewing distance
-          const baseScale = 7.5;
+          // Proportional scale anchored strictly on net mesh line intersections (diameter ~2.2m)
+          const baseScale = 2.2;
           const fgSprite = new THREE.Sprite(fgMaterial);
           fgSprite.scale.set(baseScale, baseScale, 1);
-          fgSprite.renderOrder = 999; // Always render on top
+          fgSprite.renderOrder = 60;
 
-          const bgScale = 9.5;
+          const bgScale = 2.8;
           const bgSprite = new THREE.Sprite(bgMaterial);
           bgSprite.scale.set(bgScale, bgScale, 1);
-          bgSprite.renderOrder = 998;
+          bgSprite.renderOrder = 59;
 
           // Create Group
           const markerGroup = new THREE.Group();
@@ -1482,7 +1488,8 @@
 
       // MATERIALS
       var netMat = new THREE.MeshPhysicalMaterial({ color: 0x1d4ed8, transmission: 0.88, opacity: 0.28, transparent: true, roughness: 0.15, side: THREE.DoubleSide, depthWrite: false });
-      var netWireMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+      var netWireMat = new THREE.LineBasicMaterial({ color: 0x2563eb, transparent: true, opacity: 0.75 });
+      var relingaWireMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.95 });
       var pajareraMat = new THREE.LineBasicMaterial({ color: 0x111111 });
       var loberiaMat = new THREE.MeshPhysicalMaterial({ color: 0x0f766e, transmission: 0.92, opacity: 0.20, transparent: true, side: THREE.DoubleSide, roughness: 0.3, depthWrite: false });
       var loberiaWireMat = new THREE.LineBasicMaterial({ color: 0x1a3a2e });
@@ -1554,27 +1561,48 @@
           boxLines.position.set(cx, -2, cz);
           cageGroup.add(boxLines);
 
-          // Subdivision lines on faces (3 vertical + 3 horizontal per face)
+          // Subdivision lines on faces (3 vertical + 3 horizontal per face + fondo floor mesh)
           var subPts = [];
           for (var si = 1; si <= 3; si++) {
             var sf = si/4;
-            // Front/back face vertical lines
+            // Front/back face vertical lines (relingas de paño)
             subPts.push(new THREE.Vector3(-hw + cageW*sf, 8, -hd), new THREE.Vector3(-hw + cageW*sf, -12, -hd));
             subPts.push(new THREE.Vector3(-hw + cageW*sf, 8, hd), new THREE.Vector3(-hw + cageW*sf, -12, hd));
-            // Left/right face vertical lines
+            // Left/right face vertical lines (relingas de paño)
             subPts.push(new THREE.Vector3(-hw, 8, -hd + cageD*sf), new THREE.Vector3(-hw, -12, -hd + cageD*sf));
             subPts.push(new THREE.Vector3(hw, 8, -hd + cageD*sf), new THREE.Vector3(hw, -12, -hd + cageD*sf));
-            // Horizontal lines on all 4 faces
+            // Horizontal lines on all 4 faces (cotas de profundidad)
             var hy = 8 - 20*sf;
             subPts.push(new THREE.Vector3(-hw, hy, -hd), new THREE.Vector3(hw, hy, -hd));
             subPts.push(new THREE.Vector3(-hw, hy, hd), new THREE.Vector3(hw, hy, hd));
             subPts.push(new THREE.Vector3(-hw, hy, -hd), new THREE.Vector3(-hw, hy, hd));
             subPts.push(new THREE.Vector3(hw, hy, -hd), new THREE.Vector3(hw, hy, hd));
+            // Fondo de la pecera (Bottom mesh floor lines at Y = -12)
+            subPts.push(new THREE.Vector3(-hw + cageW*sf, -12, -hd), new THREE.Vector3(-hw + cageW*sf, -12, hd));
+            subPts.push(new THREE.Vector3(-hw, -12, -hd + cageD*sf), new THREE.Vector3(hw, -12, -hd + cageD*sf));
           }
           var subGeo = new THREE.BufferGeometry().setFromPoints(subPts);
           var subLines = new THREE.LineSegments(subGeo, netWireMat);
           subLines.position.set(cx, 0, cz);
           cageGroup.add(subLines);
+
+          // Relingas estructurales verticales (Ropes principales de refuerzo de la malla)
+          var relingaPts = [];
+          var rOffsets = [-5.5, 0.0, 5.5];
+          for (var ri = 0; ri < rOffsets.length; ri++) {
+            var ro = rOffsets[ri];
+            relingaPts.push(new THREE.Vector3(ro, 8, -hd), new THREE.Vector3(ro, -12, -hd));
+            relingaPts.push(new THREE.Vector3(ro, 8, hd), new THREE.Vector3(ro, -12, hd));
+            relingaPts.push(new THREE.Vector3(-hw, 8, ro), new THREE.Vector3(-hw, -12, ro));
+            relingaPts.push(new THREE.Vector3(hw, 8, ro), new THREE.Vector3(hw, -12, ro));
+            // Cruces de fondo
+            relingaPts.push(new THREE.Vector3(ro, -12, -hd), new THREE.Vector3(ro, -12, hd));
+            relingaPts.push(new THREE.Vector3(-hw, -12, ro), new THREE.Vector3(hw, -12, ro));
+          }
+          var relingaGeo = new THREE.BufferGeometry().setFromPoints(relingaPts);
+          var relingaLines = new THREE.LineSegments(relingaGeo, relingaWireMat);
+          relingaLines.position.set(cx, 0, cz);
+          cageGroup.add(relingaLines);
 
 
           // LABEL
@@ -2075,11 +2103,11 @@
             : (m.id === reportId || (m.report && m.report.id === reportId));
           if (m.fgSprite) {
             if (isMatch) {
-              m.fgSprite.scale.set(m.baseScale * 1.45, m.baseScale * 1.45, 1);
-              if (m.bgSprite) m.bgSprite.scale.set(m.baseScale * 1.8, m.baseScale * 1.8, 1);
+              m.fgSprite.scale.set(m.baseScale * 1.35, m.baseScale * 1.35, 1);
+              if (m.bgSprite) m.bgSprite.scale.set(m.baseScale * 1.6, m.baseScale * 1.6, 1);
             } else {
               m.fgSprite.scale.set(m.baseScale, m.baseScale, 1);
-              if (m.bgSprite) m.bgSprite.scale.set(m.baseScale * 1.26, m.baseScale * 1.26, 1);
+              if (m.bgSprite) m.bgSprite.scale.set(m.baseScale * 1.25, m.baseScale * 1.25, 1);
             }
           }
         });
