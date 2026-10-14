@@ -50,6 +50,15 @@ const defaultMarkers: FindingMarker[] = [
     status: 'optimal',
     description: 'Bloque de concreto (muerto) estable y sin desplazamiento.',
     component: 'Sistema de Fondeo'
+  },
+  {
+    id: 5,
+    position: [5.5, -12, 10], 
+    title: 'Paño Lateral Red Pecera',
+    depth: '-12.0m',
+    status: 'critical',
+    description: 'Desgarro de 0.8m detectado en relinga vertical #2.',
+    component: 'Red Pecera'
   }
 ];
 
@@ -113,33 +122,6 @@ const Cage = ({ x, z }: { x: number, z: number }) => {
         <cylinderGeometry args={[7.07, 1, 6, 4]} />
         <meshPhysicalMaterial color="#1e40af" transmission={0.6} opacity={0.8} transparent roughness={0.2} side={THREE.DoubleSide} />
         <Edges scale={1.0} threshold={15} color="#000000" />
-      </mesh>
-      
-      {/* Mortandad Top Ring */}
-      <mesh position={[x, 1, z]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1.5, 0.15, 8, 24]} />
-        <meshStandardMaterial color="#0f172a" />
-      </mesh>
-      <mesh position={[x, 1, z]} rotation={[0, 0, 0]}>
-        <cylinderGeometry args={[0.08, 0.08, 3]} />
-        <meshStandardMaterial color="#0f172a" />
-      </mesh>
-      <mesh position={[x, 1, z]} rotation={[0, Math.PI / 2, 0]}>
-        <cylinderGeometry args={[0.08, 0.08, 3]} />
-        <meshStandardMaterial color="#0f172a" />
-      </mesh>
-
-      {/* Mortandad Tube */}
-      <mesh position={[x, -8.5, z]}>
-        <cylinderGeometry args={[0.2, 0.2, 19, 8]} />
-        <meshStandardMaterial color="#06b6d4" />
-      </mesh>
-      
-      {/* Mortandad Funnel */}
-      <mesh position={[x, -18.5, z]} rotation={[Math.PI, 0, 0]}>
-        <coneGeometry args={[1.8, 2, 16]} />
-        <meshStandardMaterial color="#06b6d4" side={THREE.DoubleSide} />
-        <Edges scale={1.0} threshold={15} color="#0891b2" />
       </mesh>
     </group>
   );

@@ -14,6 +14,8 @@
   <!-- Three.js and OrbitControls via CDN -->
   <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
   <script src="https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Realistic Subsea ROV Graphics Engine -->
+  <script src="/marineEffects.js"></script>
 
   <style>
     body {
@@ -329,6 +331,7 @@
     let allReports = [];
     let activeReportId = null;
     let calendarViewDate = new Date(2026, 6, 1);
+    let marineEngine = null;
 
     // Raycasting parameters for interactive 3D markers
     let raycaster, mouse;
@@ -829,27 +832,60 @@
 
     function createMarkerBgTexture(colorType) {
       const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
+      canvas.width = 512;
+      canvas.height = 512;
       const ctx = canvas.getContext('2d');
       
-      ctx.clearRect(0, 0, 256, 256);
+      ctx.clearRect(0, 0, 512, 512);
       
-      // Color selection
-      let color = 'rgba(52, 211, 153, 0.7)'; // Green
+      const cx = 256;
+      const cy = 256;
+      
+      // Neon colors for telemetry ring
+      let neonColor = '#10b981'; // Vibrant emerald
+      let haloColor = 'rgba(16, 185, 129, 0.28)';
       if (colorType === 'red') {
-        color = 'rgba(239, 68, 68, 0.85)';
+        neonColor = '#ef4444'; // Vibrant red
+        haloColor = 'rgba(239, 68, 68, 0.28)';
       } else if (colorType === 'yellow') {
-        color = 'rgba(245, 158, 11, 0.85)';
+        neonColor = '#f59e0b'; // Vibrant amber
+        haloColor = 'rgba(245, 158, 11, 0.28)';
       }
       
-      // Outer dashed radar circle
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 6;
-      ctx.setLineDash([16, 16]);
+      // Soft radial glow aura
+      const halo = ctx.createRadialGradient(cx, cy, 120, cx, cy, 250);
+      halo.addColorStop(0, haloColor);
+      halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = halo;
       ctx.beginPath();
-      ctx.arc(128, 128, 116, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 250, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Outer dashed radar circle
+      ctx.save();
+      ctx.strokeStyle = neonColor;
+      ctx.lineWidth = 6;
+      ctx.setLineDash([24, 18]);
+      ctx.shadowColor = neonColor;
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 215, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
+      
+      // Corner radar ticks (4 compass cardinals)
+      ctx.save();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 5;
+      ctx.shadowColor = neonColor;
+      ctx.shadowBlur = 10;
+      for (let i = 0; i < 4; i++) {
+        const angle = (i * Math.PI) / 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 230, angle - 0.16, angle + 0.16);
+        ctx.stroke();
+      }
+      ctx.restore();
       
       const texture = new THREE.CanvasTexture(canvas);
       texture.needsUpdate = true;
@@ -858,58 +894,105 @@
 
     function createMarkerFgTexture(number, colorType) {
       const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
+      canvas.width = 512;
+      canvas.height = 512;
       const ctx = canvas.getContext('2d');
       
-      ctx.clearRect(0, 0, 256, 256);
+      ctx.clearRect(0, 0, 512, 512);
       
-      const cx = 128;
-      const cy = 128;
+      const cx = 256;
+      const cy = 256;
+      const badgeR = 162;
       
-      // Colors selection
-      let strokeColor = 'rgba(52, 211, 153, 0.95)';
-      let fillStyle = 'rgba(6, 78, 59, 0.85)';
-      let shadowColor = 'rgba(52, 211, 153, 0.85)';
+      // Vibrant, high-contrast, non-murky color ramps
+      let lightColor = '#34d399';
+      let midColor = '#10b981';
+      let darkColor = '#047857';
+      let glowColor = 'rgba(16, 185, 129, 0.85)';
       
       if (colorType === 'red') {
-        strokeColor = 'rgba(239, 68, 68, 0.95)';
-        fillStyle = 'rgba(127, 29, 29, 0.85)';
-        shadowColor = 'rgba(239, 68, 68, 0.85)';
+        lightColor = '#ff4d6d';
+        midColor = '#ef4444';
+        darkColor = '#b91c1c';
+        glowColor = 'rgba(239, 68, 68, 0.85)';
       } else if (colorType === 'yellow') {
-        strokeColor = 'rgba(245, 158, 11, 0.95)';
-        fillStyle = 'rgba(120, 53, 4, 0.85)';
-        shadowColor = 'rgba(245, 158, 11, 0.85)';
+        lightColor = '#fde047';
+        midColor = '#f59e0b';
+        darkColor = '#b45309';
+        glowColor = 'rgba(245, 158, 11, 0.85)';
       }
       
-      // Inner glowing circle filled
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 10;
-      
-      // Shadow for glow effect
-      ctx.shadowColor = shadowColor;
-      ctx.shadowBlur = 20;
-      
-      ctx.fillStyle = fillStyle;
+      // 1. Outer dark drop shadow (separates pin cleanly from ocean and cage mesh)
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+      ctx.shadowBlur = 28;
+      ctx.shadowOffsetY = 8;
       ctx.beginPath();
-      ctx.arc(cx, cy, 88, 0, Math.PI * 2);
+      ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
+      ctx.fillStyle = '#050b18';
       ctx.fill();
+      ctx.restore();
+      
+      // 2. Solid rich radial gradient fill
+      const grad = ctx.createRadialGradient(cx - 45, cy - 45, 20, cx, cy, badgeR);
+      grad.addColorStop(0, lightColor);
+      grad.addColorStop(0.55, midColor);
+      grad.addColorStop(1, darkColor);
+      
+      ctx.beginPath();
+      ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      
+      // 3. Thick solid pure-white border with neon glow
+      ctx.save();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 16;
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 22;
+      ctx.beginPath();
+      ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
       
-      // Reset shadow for text
-      ctx.shadowBlur = 0;
+      // 4. Inner glossy highlight arc
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(cx, cy, badgeR - 12, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+      ctx.restore();
       
-      // Text (White for extreme contrast and visibility)
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 100px JetBrains Mono, Outfit, sans-serif';
+      // 5. Giant bold white number with dark contrast outline & shadow
+      const numStr = String(number);
+      let fontSize = 200;
+      if (numStr.length === 2) fontSize = 165;
+      else if (numStr.length >= 3) fontSize = 130;
+      
+      ctx.save();
+      ctx.font = `900 ${fontSize}px Outfit, 'JetBrains Mono', -apple-system, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(number, cx, cy);
+      
+      // Heavy dark stroke for extreme contrast against any background
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+      ctx.lineWidth = 14;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 4;
+      ctx.strokeText(numStr, cx, cy + 8);
+      
+      // Pure white text
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(numStr, cx, cy + 8);
+      ctx.restore();
       
       const texture = new THREE.CanvasTexture(canvas);
       texture.needsUpdate = true;
       return texture;
     }
+
 
     function getMarker3DPosition(report, finding, globalIdx, urlCenterId) {
       let cageId = (finding && finding.jaula) ? finding.jaula : (typeof detectCageId === 'function' ? detectCageId(report) : '101');
@@ -942,31 +1025,121 @@
       const cx = -offsetX + cageW/2 + c*(cageW+cageSpacing);
       const cz = -offsetZ + cageD/2 + r*(cageD+cageSpacing);
 
-      const seccion = finding ? (finding.seccion || '').toLowerCase() : '';
-      let secKey = 'fondo';
-      if (seccion.includes('flotador') || seccion.includes('superficie')) secKey = 'flotador';
-      else if (seccion.includes('lateral')) secKey = 'lateral';
+      const hw = cageW / 2; // 11
+      const hd = cageD / 2; // 11
 
-      // Distribuir TODOS los hallazgos en la parte de arriba (pasarelas)
-      // para que sean fácilmente visibles desde la vista superior
-      const isXWalkway = (globalIdx % 2) === 0;
-      const side = (globalIdx % 4) < 2 ? 1 : -1;
-      
-      // Distribuir a lo largo del borde (de -10 a +10)
-      const offset = ( (globalIdx * 7) % 200 ) / 10 - 10; 
-      
-      // Pequeña variación de altura para que no colisionen si están muy cerca
-      const heightVar = 9.5 + (globalIdx % 5) * 0.4; 
+      // 1. Obtener profundidad real reportada (en metros submarinos)
+      let depthMeters = null;
 
-      if (isXWalkway) {
-         // Borde superior o inferior de la jaula
-         return new THREE.Vector3(cx + offset, heightVar, cz + (cageD/2 + cageSpacing/2) * side);
-      } else {
-         // Borde izquierdo o derecho de la jaula
-         return new THREE.Vector3(cx + (cageW/2 + cageSpacing/2) * side, heightVar, cz + offset);
+      if (finding && finding.profundidad) {
+        const m = String(finding.profundidad).match(/(\d+(\.\d+)?)/);
+        if (m) {
+          const val = parseFloat(m[1]);
+          // En acuicultura las profundidades de inspección van de 4m a 28m
+          // (valores menores a 3m corresponden a dimensiones de corte/desgarro)
+          if (val >= 3.0) depthMeters = val;
+        }
       }
+
+      const textDesc = ((finding ? (finding.observacion + ' ' + (finding.clasificacion || '')) : '') + ' ' + (report.nombre || '') + ' ' + (report.redes || '')).toLowerCase();
+      const seccion = finding ? (finding.seccion || '').toLowerCase() : '';
+
+      // Si no viene en finding.profundidad, buscar en el texto frases de profundidad real
+      if (!depthMeters) {
+        const matchDepth = textDesc.match(/(?:profundidad|cota|a|calado)\s*(?:de)?\s*(\d+(\.\d+)?)\s*(?:m|metros)/i);
+        if (matchDepth) {
+          const val = parseFloat(matchDepth[1]);
+          if (val >= 3.0) depthMeters = val;
+        }
+      }
+
+      const clasificacion = finding ? (finding.clasificacion || '').toLowerCase() : '';
+
+      // Si aún no hay profundidad, deducir según la sección de la malla en acuicultura:
+      if (!depthMeters) {
+        if (seccion.includes('fondo') || textDesc.includes('fondo')) {
+          depthMeters = 20.0;
+        } else if (textDesc.includes('lobera')) {
+          depthMeters = 22.0 + ((globalIdx * 2) % 6);
+        } else if (textDesc.includes('fondeo') || textDesc.includes('anclaje')) {
+          depthMeters = 24.0;
+        } else if (seccion.includes('flotador')) {
+          depthMeters = 6.0;
+        } else {
+          // Paredes verticales de la red: repartidas entre 8m y 16m
+          const realisticDepths = [8.0, 12.0, 15.0, 18.0];
+          depthMeters = realisticDepths[globalIdx % realisticDepths.length];
+        }
+      }
+
+      // A) SISTEMA DE FONDEO Y ANCLAJE (Líneas diagonales exteriores hacia los muertos de hormigón)
+      const isFondeo = textDesc.includes('fondeo') || textDesc.includes('anclaje') || clasificacion.includes('fondeo');
+      if (isFondeo) {
+        const posY = 8.0 - depthMeters; // Ej: cota 24m -> Y = -16.0
+        const sideZ = cz >= 0 ? 1 : -1;
+        const posX = cx;
+        const posZ = cz + (hd + 16.0) * sideZ;
+        return new THREE.Vector3(posX, Math.max(-45.0, Math.min(-12.0, posY)), posZ);
+      }
+
+      // B) RED LOBERA (Malla exterior envolvente anti-depredadores a 22m - 28m)
+      const isLobera = textDesc.includes('lobera') || seccion.includes('lobera') || clasificacion.includes('lobera');
+      if (isLobera) {
+        const posY = 8.0 - depthMeters;
+        const sideZ = cz >= 0 ? 1 : -1;
+        return new THREE.Vector3(cx, Math.max(-24.0, Math.min(-12.0, posY)), cz + (hd + 4.5) * sideZ);
+      }
+
+      // C) FONDO DE JAULA PECERA (Cota 20 metros, base de la red pecera en Y = -12.0)
+      const isFondo = (seccion.includes('fondo') || textDesc.includes('fondo')) && depthMeters >= 18.0;
+      if (isFondo) {
+        const posY = -12.0; // Fondo exacto de la red pecera
+        const relingaOffsets = [-5.5, 0.0, 5.5];
+        const rx = relingaOffsets[globalIdx % 3];
+        const rz = (textDesc.includes('sur')) ? (hd - 1.5) : (textDesc.includes('norte') ? -(hd - 1.5) : 0);
+        return new THREE.Vector3(cx + rx, posY, cz + rz);
+      }
+
+      // D) PAREDES LATERALES DE LA RED PECERA (Paños de red sumergidos de 6m a 18m)
+      let posY = 8.0 - depthMeters;
+      posY = Math.max(-11.5, Math.min(2.0, posY));
+
+      let face = '';
+      if (textDesc.includes('sur') || textDesc.includes('south')) face = 'sur';
+      else if (textDesc.includes('norte') || textDesc.includes('north')) face = 'norte';
+      else if (textDesc.includes('este') || textDesc.includes('oriente') || textDesc.includes('east')) face = 'este';
+      else if (textDesc.includes('oeste') || textDesc.includes('poniente') || textDesc.includes('west')) face = 'oeste';
+      else {
+        const faces = ['sur', 'este', 'norte', 'oeste'];
+        face = faces[globalIdx % 4];
+      }
+
+      // Alinear sobre las relingas verticales de refuerzo de la red (-5.5m, 0m, +5.5m)
+      const relingaOffsets = [-5.5, 0.0, 5.5];
+      const relingaOffset = relingaOffsets[(globalIdx * 2 + Math.floor(depthMeters)) % 3];
+
+      let posX = cx;
+      let posZ = cz;
+      const normalOffset = 0.85; // Separación nítida sobre la cara exterior para visibilidad óptima
+
+      if (face === 'sur') {
+        posX = cx + relingaOffset;
+        posZ = cz + hd + normalOffset;
+      } else if (face === 'norte') {
+        posX = cx + relingaOffset;
+        posZ = cz - hd - normalOffset;
+      } else if (face === 'este') {
+        posX = cx + hw + normalOffset;
+        posZ = cz + relingaOffset;
+      } else if (face === 'oeste') {
+        posX = cx - hw - normalOffset;
+        posZ = cz + relingaOffset;
+      }
+
+      return new THREE.Vector3(posX, posY, posZ);
     }
-    async function loadReportsAndCreateMarkers() {
+
+    function getInitialReportsSync() {
       const savedUser = localStorage.getItem('subvision_current_user');
       let email = 'operador@servirov.cl';
       if (savedUser) {
@@ -976,45 +1149,36 @@
       }
 
       let reports = [];
-      try {
-        const { data: dbReports, error } = await supabaseClient
-          .from('rov_reports')
-          .select('*')
-          .order('fecha', { ascending: false });
-
-        if (!error && dbReports && dbReports.length > 0) {
-          reports = dbReports.map(r => ({
-            id: r.id,
-            fecha: r.fecha || '',
-            nombre: r.nombre || '',
-            jefeCentro: r.jefe_centro || r.jefeCentro || '',
-            piloto: r.piloto || '',
-            empresa: r.empresa || '',
-            puerto: r.puerto || 'Abierto',
-            redes: r.redes || '',
-            centroId: r.centro_id || r.centroId || '',
-            findings: r.findings || []
-          }));
-        }
-      } catch (dbErr) {
-        console.warn("Supabase fetch failed in 3D Viewer:", dbErr);
+      const cached = localStorage.getItem('subvision_rov_reports_cache');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) reports = parsed;
+        } catch {}
       }
 
       if (reports.length === 0) {
         const saved = localStorage.getItem(`subvision_rov_reports_${email}`);
         if (saved) {
           try {
-            reports = JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) reports = parsed;
           } catch {}
         }
       }
 
-      // Always ensure initial fallback reports with their findings are present across all roles (Admin, Cliente, Piloto)
+      // Always ensure initial fallback reports with their findings are present across all roles
       initialRovReportsFallback.forEach(def => {
         if (!reports.some(r => r.id === def.id)) {
           reports.push(def);
         }
       });
+
+      return reports;
+    }
+
+    function render3DMarkers(reports) {
+      if (!reports || !Array.isArray(reports)) return;
 
       const urlParams = new URLSearchParams(window.location.search);
       const urlCenterId = urlParams.get('center') || 'centro-pilpilehue';
@@ -1055,6 +1219,9 @@
 
           const markerNumber = globalMarkerCounter + 1;
           globalMarkerCounter++;
+          if (finding) {
+            finding.markerNumber = markerNumber;
+          }
 
           // Detect color status based on finding or report details
           const textDesc = finding 
@@ -1071,32 +1238,34 @@
             }
           }
 
-          // Create textures
+          // Create textures (512x512 high definition)
           const fgTexture = createMarkerFgTexture(markerNumber, markerColor);
           const bgTexture = createMarkerBgTexture(markerColor);
 
-          // Create materials with depthTest: true so Three.js renders them reliably
+          // Materials: depthTest: false & depthWrite: false ensures crystal clear rendering without net clipping
           const fgMaterial = new THREE.SpriteMaterial({ 
             map: fgTexture, 
             transparent: true,
             depthWrite: false,
-            depthTest: true
+            depthTest: false
           });
           const bgMaterial = new THREE.SpriteMaterial({ 
             map: bgTexture, 
             transparent: true,
             depthWrite: false,
-            depthTest: true
+            depthTest: false
           });
 
-          // Create sprites
+          // Sprites with generous scale for high visibility from subsea viewing distance
+          const baseScale = 7.5;
           const fgSprite = new THREE.Sprite(fgMaterial);
-          fgSprite.scale.set(4.5, 4.5, 1);
-          fgSprite.renderOrder = 12; // Force rendering on top
+          fgSprite.scale.set(baseScale, baseScale, 1);
+          fgSprite.renderOrder = 999; // Always render on top
 
+          const bgScale = 9.5;
           const bgSprite = new THREE.Sprite(bgMaterial);
-          bgSprite.scale.set(5.5, 5.5, 1);
-          bgSprite.renderOrder = 11;
+          bgSprite.scale.set(bgScale, bgScale, 1);
+          bgSprite.renderOrder = 998;
 
           // Create Group
           const markerGroup = new THREE.Group();
@@ -1113,10 +1282,11 @@
           threeMarkers.push({
             id: report.id,
             findingId: finding ? finding.id : null,
+            markerNumber: markerNumber,
             group: markerGroup,
             bgSprite: bgSprite,
             fgSprite: fgSprite,
-            baseScale: 4.5,
+            baseScale: baseScale,
             report: report,
             finding: finding
           });
@@ -1126,12 +1296,60 @@
       if (typeof renderMiniCalendarGrid === 'function') {
         renderMiniCalendarGrid();
       }
+    }
+
+    async function syncReportsFromSupabase() {
+      try {
+        const { data: dbReports, error } = await supabaseClient
+          .from('rov_reports')
+          .select('*')
+          .order('fecha', { ascending: false });
+
+        if (!error && dbReports && dbReports.length > 0) {
+          const freshReports = dbReports.map(r => ({
+            id: r.id,
+            fecha: r.fecha || '',
+            nombre: r.nombre || '',
+            jefeCentro: r.jefe_centro || r.jefeCentro || '',
+            piloto: r.piloto || '',
+            empresa: r.empresa || '',
+            puerto: r.puerto || 'Abierto',
+            redes: r.redes || '',
+            centroId: r.centro_id || r.centroId || '',
+            findings: r.findings || []
+          }));
+
+          // Always ensure fallback reports are merged
+          initialRovReportsFallback.forEach(def => {
+            if (!freshReports.some(r => r.id === def.id)) {
+              freshReports.push(def);
+            }
+          });
+
+          // Cache locally for next instantaneous load
+          try {
+            localStorage.setItem('subvision_rov_reports_cache', JSON.stringify(freshReports));
+          } catch {}
+
+          // Update markers seamlessly
+          render3DMarkers(freshReports);
+        }
+      } catch (dbErr) {
+        console.warn("Supabase fetch failed in 3D Viewer:", dbErr);
+      }
 
       const params = new URLSearchParams(window.location.search);
       const reportId = params.get('report');
       if (reportId) {
-        setTimeout(() => openDrawerForReport(reportId), 500);
+        setTimeout(() => openDrawerForReport(reportId), 200);
       }
+    }
+
+    // Bridge for backwards compatibility
+    async function loadReportsAndCreateMarkers() {
+      const initial = getInitialReportsSync();
+      render3DMarkers(initial);
+      await syncReportsFromSupabase();
     }
 
     function init() {
@@ -1151,7 +1369,8 @@
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
-      controls.maxPolarAngle = Math.PI / 2 - 0.05;
+      controls.maxPolarAngle = Math.PI * 0.92;
+      controls.target.set(0, -2, 0);
       controls.minDistance = 20;
       controls.maxDistance = 500;
 
@@ -1164,17 +1383,29 @@
       renderer.domElement.addEventListener('pointerdown', onPointerDown);
       renderer.domElement.addEventListener('pointerup', onPointerUp);
 
-      const ambientLight = new THREE.AmbientLight(0x0a224a, 1.8);
+      const ambientLight = new THREE.AmbientLight(0x426884, 1.2);
       scene.add(ambientLight);
 
-      const dirLight = new THREE.DirectionalLight(0x00d2ff, 1.4);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
       dirLight.position.set(50, 120, 40);
       scene.add(dirLight);
 
       createSeabed();
       createCages();
       createMooringLines();
-      loadReportsAndCreateMarkers();
+
+      // 1. Render initial reports immediately (0ms delay on initial load)
+      const initialReports = getInitialReportsSync();
+      render3DMarkers(initialReports);
+
+      // 2. Sync from Supabase in background without blocking rendering
+      syncReportsFromSupabase();
+
+      if (window.SubVisionMarineEngine) {
+        marineEngine = window.SubVisionMarineEngine.init(scene, camera, renderer, {
+          rows: 2, cols: 7, cageW: 22, cageD: 22, cageSpacing: 2
+        });
+      }
 
       window.addEventListener('resize', onWindowResize);
       animate();
@@ -1195,13 +1426,15 @@
       seabedPlane.position.y = -50.1;
       scene.add(seabedPlane);
 
-      // WATER PLANE at Y=0
+      if (!window.SubVisionMarineEngine) {
+        // WATER PLANE at Y=0
       const waterGeo = new THREE.PlaneGeometry(1200, 1200);
       const waterMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false });
       const waterPlane = new THREE.Mesh(waterGeo, waterMat);
       waterPlane.rotation.x = -Math.PI / 2;
       waterPlane.position.y = 0;
-      scene.add(waterPlane);
+        scene.add(waterPlane);
+      }
     }
 
     function createCages() {
@@ -1248,14 +1481,12 @@
       }
 
       // MATERIALS
-      var netMat = new THREE.MeshPhysicalMaterial({ color: 0x1e3a6e, transmission: 0.5, opacity: 0.7, transparent: true, roughness: 0.2, side: THREE.DoubleSide, depthWrite: false });
+      var netMat = new THREE.MeshPhysicalMaterial({ color: 0x1d4ed8, transmission: 0.88, opacity: 0.28, transparent: true, roughness: 0.15, side: THREE.DoubleSide, depthWrite: false });
       var netWireMat = new THREE.LineBasicMaterial({ color: 0x111111 });
       var pajareraMat = new THREE.LineBasicMaterial({ color: 0x111111 });
-      var loberiaMat = new THREE.MeshPhysicalMaterial({ color: 0x1a3a2e, transmission: 0.8, opacity: 0.35, transparent: true, side: THREE.DoubleSide, roughness: 0.5, depthWrite: false });
+      var loberiaMat = new THREE.MeshPhysicalMaterial({ color: 0x0f766e, transmission: 0.92, opacity: 0.20, transparent: true, side: THREE.DoubleSide, roughness: 0.3, depthWrite: false });
       var loberiaWireMat = new THREE.LineBasicMaterial({ color: 0x1a3a2e });
       var weightMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.5 });
-      var mortandadMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, side: THREE.DoubleSide });
-      var blackRingMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
       var weightGeo = new THREE.BoxGeometry(1.2, 1.5, 1.2);
 
       for (var cr = 0; cr < rows; cr++) {
@@ -1345,32 +1576,6 @@
           subLines.position.set(cx, 0, cz);
           cageGroup.add(subLines);
 
-          // MORTANDAD SYSTEM
-          var ringGeo = new THREE.TorusGeometry(3.5, 0.35, 8, 24);
-          var ringMesh = new THREE.Mesh(ringGeo, blackRingMat);
-          ringMesh.rotation.x = Math.PI / 2;
-          ringMesh.position.set(cx, 8, cz);
-          cageGroup.add(ringMesh);
-
-          var crossGeo = new THREE.CylinderGeometry(0.2, 0.2, 7);
-          var cross1 = new THREE.Mesh(crossGeo, blackRingMat);
-          cross1.rotation.z = Math.PI / 2;
-          cross1.position.set(cx, 8, cz);
-          cageGroup.add(cross1);
-          var cross2 = new THREE.Mesh(crossGeo, blackRingMat);
-          cross2.rotation.x = Math.PI / 2;
-          cross2.position.set(cx, 8, cz);
-          cageGroup.add(cross2);
-
-          var tubeGeo = new THREE.CylinderGeometry(0.4, 0.4, 18, 8);
-          var tubeMesh = new THREE.Mesh(tubeGeo, mortandadMat);
-          tubeMesh.position.set(cx, -1, cz);
-          cageGroup.add(tubeMesh);
-
-          var funnelGeo = new THREE.SphereGeometry(0.8, 16, 16);
-          var funnelMesh = new THREE.Mesh(funnelGeo, mortandadMat);
-          funnelMesh.position.set(cx, -10, cz);
-          cageGroup.add(funnelMesh);
 
           // LABEL
           var lGeo = new THREE.PlaneGeometry(12, 6);
@@ -1589,17 +1794,26 @@
           if (hoveredMarker !== marker) {
             if (hoveredMarker) {
               hoveredMarker.fgSprite.scale.set(hoveredMarker.baseScale, hoveredMarker.baseScale, 1);
+              if (hoveredMarker.bgSprite) {
+                hoveredMarker.bgSprite.scale.set(hoveredMarker.baseScale * 1.26, hoveredMarker.baseScale * 1.26, 1);
+              }
             }
             
             hoveredMarker = marker;
             const hoverScale = marker.baseScale * 1.25;
             marker.fgSprite.scale.set(hoverScale, hoverScale, 1);
+            if (marker.bgSprite) {
+              marker.bgSprite.scale.set(hoverScale * 1.26, hoverScale * 1.26, 1);
+            }
           }
         }
       } else {
         document.body.style.cursor = 'default';
         if (hoveredMarker) {
           hoveredMarker.fgSprite.scale.set(hoveredMarker.baseScale, hoveredMarker.baseScale, 1);
+          if (hoveredMarker.bgSprite) {
+            hoveredMarker.bgSprite.scale.set(hoveredMarker.baseScale * 1.26, hoveredMarker.baseScale * 1.26, 1);
+          }
           hoveredMarker = null;
         }
       }
@@ -1626,13 +1840,29 @@
         const hitSprite = intersects[0].object;
         const marker = threeMarkers.find(m => m.fgSprite === hitSprite);
         if (marker) {
+          focusOnMarker(marker);
           openDrawerForReport(marker.id, marker.findingId);
         }
       }
     }
 
+    let targetCameraLookAt = null;
+    function focusOnMarker(marker) {
+      if (marker && marker.group) {
+        targetCameraLookAt = marker.group.position.clone();
+      }
+    }
+
     function animate() {
       requestAnimationFrame(animate);
+
+      if (targetCameraLookAt && controls) {
+        controls.target.lerp(targetCameraLookAt, 0.08);
+        if (controls.target.distanceTo(targetCameraLookAt) < 0.2) {
+          controls.target.copy(targetCameraLookAt);
+          targetCameraLookAt = null;
+        }
+      }
       
       controls.update();
 
@@ -1653,13 +1883,20 @@
         });
       }
 
-      renderer.render(scene, camera);
+      if (marineEngine) {
+        marineEngine.updateAndRender(time);
+      } else {
+        renderer.render(scene, camera);
+      }
     }
 
     function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      if (marineEngine) {
+        marineEngine.resize(window.innerWidth, window.innerHeight);
+      }
     }
 
     function openDrawerForReport(reportId, targetFindingId) {
@@ -1667,6 +1904,11 @@
       if (!report) return;
 
       activeReportId = reportId;
+
+      if (typeof threeMarkers !== 'undefined') {
+        const matched = threeMarkers.find(m => m.id === reportId && (!targetFindingId || m.findingId === targetFindingId));
+        if (matched) focusOnMarker(matched);
+      }
       
       // Reset AI response box and input
       const resBox = document.getElementById('ai-response-box');
@@ -1759,6 +2001,13 @@
         const badgeColorStyle = isRed ? 'text-red-400 bg-red-500/10 border-red-500/30' : (f.clasificacion === 'Sobretensión Fondeo' || f.clasificacion === 'Biofouling pesado' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30');
         const badgeText = isRed ? 'Crítico - Emergencia' : (f.clasificacion === 'Sobretensión Fondeo' || f.clasificacion === 'Biofouling pesado' ? 'Advertencia' : 'Óptimo');
 
+        const markerNum = f.markerNumber || (typeof threeMarkers !== 'undefined' ? (threeMarkers.find(m => (f.id && m.findingId === f.id) || m.id === reportId)?.markerNumber) : null) || '•';
+        const numBadgeBg = isRed 
+          ? 'background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 0 10px rgba(239,68,68,0.7);' 
+          : ((f.clasificacion === 'Sobretensión Fondeo' || f.clasificacion === 'Biofouling pesado') 
+            ? 'background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 0 10px rgba(245,158,11,0.7);' 
+            : 'background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 0 10px rgba(16,185,129,0.7);');
+
         let waBtn = '';
         if (isRed) {
           waBtn = `
@@ -1779,7 +2028,12 @@
         findingsHtml += `
           <div id="drawer-card-${f.id}" class="p-3.5 rounded-xl space-y-2 backdrop-blur-md mb-3 last:mb-0 transition-all duration-300 ${selectedStyle}">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-white text-[11px] uppercase">Módulo ${f.jaula}</span>
+              <div class="flex items-center gap-2">
+                <span style="width:24px;height:24px;min-width:24px;border-radius:50%;border:2px solid #ffffff;color:#ffffff;font-weight:900;font-size:11px;display:flex;align-items:center;justify-content:center;${numBadgeBg}">
+                  ${markerNum}
+                </span>
+                <span class="font-bold text-white text-[11px] uppercase">Módulo ${f.jaula}</span>
+              </div>
               <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${badgeColorStyle}">
                 ${badgeText}
               </span>
@@ -1822,8 +2076,10 @@
           if (m.fgSprite) {
             if (isMatch) {
               m.fgSprite.scale.set(m.baseScale * 1.45, m.baseScale * 1.45, 1);
+              if (m.bgSprite) m.bgSprite.scale.set(m.baseScale * 1.8, m.baseScale * 1.8, 1);
             } else {
               m.fgSprite.scale.set(m.baseScale, m.baseScale, 1);
+              if (m.bgSprite) m.bgSprite.scale.set(m.baseScale * 1.26, m.baseScale * 1.26, 1);
             }
           }
         });
@@ -2021,8 +2277,16 @@
           var he   = 'onmouseenter="this.style.background=\'rgba(255,255,255,0.06)\'" onmouseleave="this.style.background=\'' + bg + '\'"';
           var activeLabel = isCurrent ? '<p style="margin:0;font-size:9px;font-weight:700;color:#22d3ee;">\u25cf Activo</p>' : '';
           
-          html += '<div onclick="' + clk + '" ' + he + ' style="display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:10px;background:' + bg + ';border:' + bdr + ';cursor:pointer;transition:background .15s;box-sizing:border-box;">';
-          html += '<div style="width:8px;height:8px;min-width:8px;border-radius:50%;background:' + dot + ';box-shadow:0 0 5px ' + dot + '99;flex-shrink:0;"></div>';
+          var matchedMarker = (typeof threeMarkers !== 'undefined') ? threeMarkers.find(function(m){ return (f && f.id && m.findingId === f.id) || (m.id === r.id); }) : null;
+          var markerNum = (f && f.markerNumber) ? f.markerNumber : (matchedMarker ? matchedMarker.markerNumber : '•');
+          var badgeNumBg = (dot === '#f87171') 
+            ? 'background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 0 8px rgba(239,68,68,0.7);' 
+            : ((dot === '#fbbf24') 
+              ? 'background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 0 8px rgba(245,158,11,0.7);' 
+              : 'background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 0 8px rgba(16,185,129,0.7);');
+
+          html += '<div onclick="' + clk + '" ' + he + ' style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:' + bg + ';border:' + bdr + ';cursor:pointer;transition:background .15s;box-sizing:border-box;">';
+          html += '<div style="width:22px;height:22px;min-width:22px;border-radius:50%;border:2px solid #ffffff;color:#ffffff;font-weight:900;font-size:10px;display:flex;align-items:center;justify-content:center;' + badgeNumBg + 'flex-shrink:0;">' + markerNum + '</div>';
           html += '<div style="flex:1;min-width:0;overflow:hidden;">';
           html += '<p style="margin:0;font-size:12px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">M\u00f3dulo ' + cage + '</p>';
           html += '<p style="margin:0;font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + desc + '</p>';
