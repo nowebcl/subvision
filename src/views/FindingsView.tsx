@@ -11,11 +11,12 @@ import {
   User, 
   Calendar, 
   Info,
-  Anchor
+  Anchor,
+  Mail
 } from 'lucide-react';
 
 export const FindingsView: React.FC = () => {
-  const { rovReports, openPhoneModal } = useApp();
+  const { rovReports, openPhoneModal, openEmailModal } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCenter, setSelectedCenter] = useState('all');
   const [selectedSeverity, setSelectedSeverity] = useState('all');
@@ -246,16 +247,26 @@ export const FindingsView: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Trigger WhatsApp Live simulator action only for Red reports */}
-                  {crit && (
+                  {/* Actions: WhatsApp Alert & Email Dispatch */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {crit && (
+                      <button
+                        onClick={() => triggerWhatsAppAlert(report)}
+                        className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] rounded-lg shadow-xs hover:shadow-sm transition-all cursor-pointer select-none"
+                      >
+                        <Smartphone className="w-3.5 h-3.5" />
+                        <span>Alerta WhatsApp</span>
+                      </button>
+                    )}
                     <button
-                      onClick={() => triggerWhatsAppAlert(report)}
-                      className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] rounded-lg shadow-xs hover:shadow-sm transition-all cursor-pointer select-none"
+                      onClick={() => openEmailModal(report, 'gerencia@servirov.cl')}
+                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-[10px] rounded-lg shadow-xs hover:shadow-sm transition-all cursor-pointer select-none"
+                      title="Enviar reporte de este hallazgo por correo oficial"
                     >
-                      <Smartphone className="w-3.5 h-3.5" />
-                      <span>Alerta WhatsApp</span>
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Enviar Correo</span>
                     </button>
-                  )}
+                  </div>
                 </div>
 
               </div>

@@ -1442,11 +1442,9 @@ export const DashboardView: React.FC = () => {
                       </button>
                       
                       <button
-                        onClick={() => {
-                          setEmailPromptReport(report);
-                          setIsEmailPromptOpen(true);
-                        }}
-                        className="p-2 rounded-xl bg-cyan-500 text-slate-950 hover:bg-cyan-400 border border-transparent transition-all shadow-sm"
+                        onClick={() => openEmailModal(report, 'gerencia@servirov.cl')}
+                        title="Enviar informe por correo oficial"
+                        className="p-2 rounded-xl bg-cyan-500 text-slate-950 hover:bg-cyan-400 border border-transparent transition-all shadow-sm cursor-pointer"
                       >
                         <Mail className="w-4 h-4" />
                       </button>
@@ -1548,11 +1546,8 @@ export const DashboardView: React.FC = () => {
                               <FileDown className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => {
-                                setEmailPromptReport(report);
-                                setIsEmailPromptOpen(true);
-                              }}
-                              title="Enviar por correo electrónico"
+                              onClick={() => openEmailModal(report, 'gerencia@servirov.cl')}
+                              title="Enviar informe por correo oficial"
                               className="p-1.5 bg-cyan-50 text-cyan-600 hover:bg-cyan-100 hover:text-cyan-700 rounded-lg border border-cyan-200/50 transition-all select-none cursor-pointer shadow-xs"
                             >
                               <Mail className="w-4 h-4" />
